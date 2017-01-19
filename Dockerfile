@@ -66,3 +66,5 @@ RUN yum update -y && \
 
 ENTRYPOINT bin/iotagent-json config.js
 
+EXPOSE 4041
+
