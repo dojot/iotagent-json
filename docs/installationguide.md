@@ -12,8 +12,11 @@ There are two ways of installing the JSON IoT Agent: using Git or RPMs.
 #### Using GIT
 In order to install the TT Agent, just clone the project and install the dependencies:
 ```
-git clone https://github.com/telefonicaid/iotagent-json.git
+git clone https://gerrit.cpqd.com.br/a/iot/middleware/iotagent-node-lib
+git clone https://gerrit.cpqd.com.br/a/iot/middleware/fiware/iotagent-json
+cd iotagent-json
 npm install
+npm install ../iotagent-node-lib --save
 ```
 In order to start the IoT Agent, from the root folder of the project, type:
 ```
