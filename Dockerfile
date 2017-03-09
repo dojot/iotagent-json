@@ -5,7 +5,7 @@
 # See the included LICENSE file for more details.
 ###
 
-FROM centos:6
+FROM centos:7
 
 MAINTAINER Daniel Moran Jimenez <daniel.moranjimenez@telefonica.com>
 
