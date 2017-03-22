@@ -23,7 +23,7 @@
 var config = {};
 
 config.mqtt = {
-    host: 'localhost',
+    host: 'mosquitto',
     port: 1883,
     defaultKey: '1234',
     thinkingThingsPlugin: true
@@ -33,7 +33,7 @@ config.iota = {
     logLevel: 'DEBUG',
     timestamp: true,
     contextBroker: {
-        host: 'localhost',
+        host: 'orion',
         port: '1026'
     },
     server: {
@@ -43,7 +43,7 @@ config.iota = {
         type: 'mongodb'
     },
     mongodb: {
-        host: 'localhost',
+        host: 'mongodb',
         port: '27017',
         db: 'iotagentjson'
     },
