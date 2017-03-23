@@ -14,6 +14,9 @@ ARG NODEJS_VERSION=
 COPY . /opt/iotajson/
 WORKDIR /opt/iotajson
 
+ENV NODE_PATH="${NODE_PATH}:/opt/iotajson/third-party"
+
+
 RUN yum update -y && \
   yum install -y epel-release && yum update -y epel-release && \
   echo "INFO: Building node and npm..." && \
@@ -33,6 +36,7 @@ RUN yum update -y && \
   echo "INFO: npm version <$(npm --version)>" && \
   echo "INFO: npm install --production..." && \
   cd /opt/iotajson && npm install --production && \
+  cd /opt/iotajson/third-party/iotagent-node-lib/ && npm install --production && \
   echo "INFO: Cleaning unused software..." && \
   yum erase -y gcc-c++ gcc ppl cpp glibc-devel glibc-headers kernel-headers libgomp libstdc++-devel mpfr libss yum-utils libxml2-python git && \
   rm -rf /opt/node-v${NODEJS_VERSION}.tar.gz /opt/node-v${NODEJS_VERSION} && \

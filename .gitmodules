@@ -1,0 +1,4 @@
+[submodule "third-party/iotagent-node-lib"]
+	path = third-party/iotagent-node-lib
+	url = ../../iotagent-node-lib
+	branch = 2d5469
