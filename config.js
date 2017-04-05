@@ -55,6 +55,15 @@ config.iota = {
     defaultType: 'Thing'
 };
 
+config.timeout = {
+    /** Number of messages skipped before declaring a device as offline */
+    waitMultiplier: 3,
+    /** Number of messages to calculate average message arrival time */
+    sampleQueueMaxSize: 10,
+    /** Timeout resolution and minimum timeout - in miliseconds.*/
+    minimumTimeoutBase: 50
+}
+
 config.configRetrieval = false;
 
 module.exports = config;
