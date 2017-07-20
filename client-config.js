@@ -28,6 +28,12 @@ config.mqtt = {
     options: {
         keepalive: 0,
         connectTimeout: 60 * 60 * 1000
+    },
+    secure: true,
+    tls: {
+        key: 'client-key.pem',
+        cert: 'client-cert.pem',
+        ca: [ 'server-cert.pem' ]
     }
 };
 

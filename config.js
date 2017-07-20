@@ -26,7 +26,13 @@ config.mqtt = {
     host: 'mosquitto',
     port: 1883,
     defaultKey: '1234',
-    thinkingThingsPlugin: true
+    thinkingThingsPlugin: true,
+    secure: false,
+    tls: {
+        key: 'client-key.pem',
+        cert: 'client-cert.pem',
+        ca: [ 'server-cert.pem' ]
+    }
 };
 
 config.iota = {
