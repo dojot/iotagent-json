@@ -27,11 +27,14 @@ config.mqtt = {
     port: 1883,
     defaultKey: '1234',
     thinkingThingsPlugin: true,
+    protocolId: 'MQIsdp',
+    protocolVersion: 3,
     secure: false,
     tls: {
         key: 'client-key.pem',
         cert: 'client-cert.pem',
-        ca: [ 'server-cert.pem' ]
+        ca: [ 'server-cert.pem' ],
+        version: 'TLSv1_2_method' // If empty, TLS version is automatic
     }
 };
 
