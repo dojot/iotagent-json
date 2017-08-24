@@ -14,11 +14,7 @@ ARG NODEJS_VERSION=
 COPY . /opt/iotajson/
 WORKDIR /opt/iotajson
 
-ENV NODE_PATH="${NODE_PATH}:/opt/iotajson/third-party"
-
-RUN cd /opt/iotajson && npm install --production && cd /opt/iotajson/third-party/iotagent-node-lib/ && npm install --production
+RUN npm install --production
 
 ENTRYPOINT bin/iotagent-json config.js
-
 EXPOSE 4041
-
