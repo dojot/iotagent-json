@@ -21,4 +21,3 @@ RUN cd /opt/iotajson && npm install --production && cd /opt/iotajson/third-party
 ENTRYPOINT bin/iotagent-json config.js
 
 EXPOSE 4041
-
