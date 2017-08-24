@@ -2,17 +2,17 @@
   "name": "iotagent-json",
   "description": "IoT Agent for the JSON protocol",
   "version": "1.5.0-next",
-  "homepage": "https://github.com/telefonicaid/iotagent-json",
+  "homepage": "https://github.com/dojot/iotagent-json",
   "author": {
     "name": "Daniel Moran",
     "email": "dmj@tid.es"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/telefonicaid/iotagent-json.git"
+    "url": "git://github.com/dojot/iotagent-json.git"
   },
   "bugs": {
-    "url": "https://github.com/telefonicaid/iotagent-json/issues"
+    "url": "https://github.com/dojot/iotagent-json/issues"
   },
   "main": "lib/iotagent-json",
   "engines": {
@@ -54,6 +54,7 @@
     "logops": "1.0.0-alpha.7",
     "mqtt": "1.10.0",
     "request": "2.72.0",
-    "underscore": "1.8.3"
+    "underscore": "1.8.3",
+    "iotagent-node-lib": "git://github.com/dojot/iotagent-node-lib.git#cpqd_master"
   }
 }
