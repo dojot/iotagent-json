@@ -1,0 +1,22 @@
+{
+  "mqtt": {
+    "host": "mqtt",
+    "port" : 1883,
+    "protocolId": "MQIsdp",
+    "protocolVersion": 3,
+    "secure": false,
+    "tls": {
+      "key": "client-key.pem",
+      "cert": "client-cert.pem",
+      "ca": [ "server-cert.pem" ],
+      "version": "TLSv1_2_method"
+    }
+  },
+  "broker": {
+    "host": "orion:1026",
+    "type": "orion"
+  },
+  "device_manager": {
+    "host": "device-manager:5000"
+  }
+}
