@@ -3,7 +3,7 @@ import util = require("util");
 import mqtt = require("mqtt");
 import mqttHandler = require("./mqtt-handler");
 import { ConfigOptions } from "./config";
-import { DeviceManagerHandler } from "./device-manager-handler";
+import { DeviceManagerHandler, AnnotationCallback, DeviceAnnotations } from "./device-manager-handler";
 import { tokenize } from "./tools";
 import { DataBroker } from "./data-broker";
 
@@ -27,22 +27,36 @@ class Agent {
     console.log("Error with MQTT operation: " + error);
   }
 
+  annotationCallback(error: any, annotation: DeviceAnnotations, messageObj: any): void {
+    console.log("Got annotations: " + util.inspect(annotation, {depth: null}));
+    let filteredObj: any = {};
+    if (error == undefined) {
+      // Message matches default message structure
+      for (let attr in messageObj) {
+        for (let deviceAttr of annotation.deviceData) {
+          if (deviceAttr.name === attr) {
+            filteredObj[attr] = messageObj[attr];
+            // Found it. Next attribute
+            break;
+          }
+        }
+      }
+      console.log("Received values for valid attributes: " + util.inspect(filteredObj, {depth: null}));
+      console.log("Sending update to orion...");
+      this.dataBroker.updateData(annotation.service, annotation.id, filteredObj);
+      console.log("... device updated");
+    } else {
+      console.log("Failure while retrieving device data. Probably it doesn't exist.");
+    }
+  }
+
   processMessage(topic: string, message: string) {
     console.log('Got new MQTT message');
     console.log('Topic: ' + topic);
     console.log('Content:' + message);
-
     let messageObj = JSON.parse(message);
-    let annotations = this.deviceManagerHandler.getAnnotations(topic, messageObj);
 
-    console.log("Got annotations: " + util.inspect(annotations, {depth: null}));
-
-    if (annotations != null) {
-      // Message matches default message structure
-      console.log("Sending update to orion...");
-      this.dataBroker.updateData(annotations.service, annotations.id, messageObj);
-      console.log("... device updated");
-    }
+    this.deviceManagerHandler.getAnnotations(topic, messageObj, (error: any, annotation: DeviceAnnotations): void => { this.annotationCallback(error, annotation, messageObj)} );
   }
 
   startMqtt() {
