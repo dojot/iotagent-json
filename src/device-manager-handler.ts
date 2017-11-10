@@ -1,4 +1,3 @@
-import fs = require("fs");
 import request = require("request");
 import util = require("util");
 import { Base64 } from "js-base64";
