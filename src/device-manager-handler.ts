@@ -6,9 +6,14 @@ import { tokenize } from "./tools";
 
 // Device attribute interface
 interface DeviceAttribute {
+  id: number;
+  label: string;
   type: string;
-  name: string;
-  object_id: string;
+  value_type: string;
+}
+
+interface DeviceTemplate {
+  [id: string]: DeviceAttribute[];
 }
 
 // Device annotation interface
@@ -20,7 +25,7 @@ interface DeviceAnnotations {
   // Flag indicating whether this can be cacheable by its topic
   cacheable: boolean;
   // Device parameters
-  deviceData: DeviceAttribute[]
+  deviceData: DeviceTemplate;
 }
 
 interface AnnotationCallback {
@@ -59,7 +64,7 @@ class DeviceManagerHandler {
 
   // Retrieve annotations related to a message.
   getAnnotations(topic: string, message: any, callback: AnnotationCallback) : void {
-    let ret = {"id" : "", "service": "", "cacheable": false, "deviceData": []};
+    let ret = {"id" : "", "service": "", "cacheable": false, "deviceData": {}};
     let topicTokens = tokenize(topic, '/');
 
     ret.service = topicTokens[1];

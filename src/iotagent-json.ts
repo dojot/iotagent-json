@@ -33,14 +33,17 @@ class Agent {
     if (error == undefined) {
       // Message matches default message structure
       for (let attr in messageObj) {
-        for (let deviceAttr of annotation.deviceData) {
-          if (deviceAttr.name === attr) {
-            filteredObj[attr] = messageObj[attr];
-            // Found it. Next attribute
-            break;
+        for (let template in annotation.deviceData) {
+          for (let cfgAttr of annotation.deviceData[template]) {
+            if (cfgAttr.label === attr) {
+              filteredObj[attr] = messageObj[attr];
+              // Found it. Next attribute
+              break;
+            }
           }
         }
       }
+
       console.log("Received values for valid attributes: " + util.inspect(filteredObj, {depth: null}));
       console.log("Sending update to orion...");
       this.dataBroker.updateData(annotation.service, annotation.id, filteredObj);
