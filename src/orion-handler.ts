@@ -16,7 +16,7 @@ class OrionHandler implements DataBroker {
       console.log("Error while posting device update: " + util.inspect(error, {depth: null}));
     } else {
       // Ok!
-      console.log("Device updated successfully.");
+      console.log("Device updated successfully. " + response.statusCode);
     }
   }
 
