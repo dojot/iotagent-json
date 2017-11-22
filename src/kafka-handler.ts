@@ -34,8 +34,12 @@ class KafkaHandler implements DataBroker {
   // sends received device event to configured kafka topic
   updateData(service: string, deviceId: string, attributes: any) {
     let updateData: any = {
-      'meta': {'deviceid': deviceId},
-      'data': attributes
+      'metadata': {
+        'deviceid': deviceId,
+        'protocol': 'mqtt',
+        'payload': 'json'
+      },
+      'attrs': attributes
     }
 
     let message: any = {
