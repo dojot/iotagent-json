@@ -1,7 +1,9 @@
 import fs = require("fs");
 import util = require("util");
 import {Agent} from "./iotagent-json";
+import {DataBroker} from "./data-broker";
 import {OrionHandler} from "./orion-handler";
+import {KafkaHandler} from "./kafka-handler";
 import {DeviceManagerHandler} from "./device-manager-handler";
 
 import { ConfigOptions, buildConfig } from "./config";
@@ -19,9 +21,18 @@ function main() {
       return console.error(err);
     }
     let configuration = buildConfig(JSON.parse(data.toString()));
-    let orionHandler = new OrionHandler(configuration);
+
+    let handler: DataBroker;
+    if (configuration.broker.type == 'kafka') {
+      handler = new KafkaHandler(configuration);
+    } else if (configuration.broker.type == 'orion') {
+      handler = new OrionHandler(configuration);
+    } else {
+      throw new Error('Invalid broker configuration detected: ' + configuration.broker.type);
+    }
+
     let deviceManagerHandler = new DeviceManagerHandler(configuration);
-    let agent = new Agent(configuration, orionHandler, deviceManagerHandler);
+    let agent = new Agent(configuration, handler, deviceManagerHandler);
     agent.startMqtt();
   });
 }
