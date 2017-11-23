@@ -81,7 +81,7 @@ function buildConfig(config: any): ConfigOptions {
   }
 
   if (config.mqtt.protocolVersion != undefined) {
-    ret.mqtt["protocolVersion"] = config.mqtt.protocolId;
+    ret.mqtt["protocolVersion"] = config.mqtt.protocolVersion;
   }
 
   if (config.broker.type != undefined) {
