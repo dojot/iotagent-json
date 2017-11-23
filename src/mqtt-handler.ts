@@ -28,7 +28,7 @@ function buildMqttParameters(config: ConfigOptions) : MqttConfig {
   let protocol = "";
   // Read TLS configuration
   if ((config.mqtt.secure == true) && (config.mqtt.tls != undefined)) {
-    let mqttTls: MqttTlsConfig = {
+    ret.options = {
       key: fs.readFileSync(config.mqtt.tls.key, "utf8"),
       cert: fs.readFileSync(config.mqtt.tls.cert, "utf8"),
       ca: <string[]>[],
@@ -40,10 +40,10 @@ function buildMqttParameters(config: ConfigOptions) : MqttConfig {
     }
     for (var i = 0; i < config.mqtt.tls.ca.length; i++) {
       // The ! indicates that the variable is not undefined.
-      mqttTls.ca!.push(fs.readFileSync(config.mqtt.tls.ca[i], 'utf8'));
+      ret.options.ca!.push(fs.readFileSync(config.mqtt.tls.ca[i], 'utf8'));
     }
-    if (config.mqtt.protocolId != undefined) {mqttTls.protocolId = config.mqtt.protocolId;}
-    if (config.mqtt.protocolVersion != undefined) {mqttTls.protocolVersion = config.mqtt.protocolVersion;}
+    if (config.mqtt.protocolId != undefined) {ret.options.protocolId = config.mqtt.protocolId;}
+    if (config.mqtt.protocolVersion != undefined) {ret.options.protocolVersion = config.mqtt.protocolVersion;}
 
     protocol = 'mqtts://';
   } else {
