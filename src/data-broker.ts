@@ -3,7 +3,7 @@
 interface DataBroker {
   host: string;
 
-  // updateData function
+  // sends data to remote interested parties
   updateData(service: string, deviceId: string, attributes: any): void;
 }
 
