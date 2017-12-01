@@ -33,6 +33,24 @@ interface MqttOptions {
   tls?: TlsOptions;
 }
 
+
+// A simple Kafka topic
+interface KafkaTopic {
+  topic: string
+}
+
+// Kafka configuration
+interface KafkaOptions {
+  autoCommit: boolean;
+  fetchMaxWaitMs: number;
+  fetchMaxBytes: number;
+  // Kafka group ID
+  groupId: string;
+  // Topics used by device manager to send notifications
+  // about devices
+  deviceNotificationTopic: KafkaTopic[];
+}
+
 // Context broker options
 interface BrokerOptions {
   // Broker address.
@@ -41,6 +59,8 @@ interface BrokerOptions {
   // Broker type.
   // Default value is "orion".
   type?: "orion" | "kafka";
+
+  kafka?: KafkaOptions;
 }
 
 // Device manager options
@@ -86,6 +106,24 @@ function buildConfig(config: any): ConfigOptions {
 
   if (config.broker.type != undefined) {
     ret.broker["type"] = config.broker.type;
+  } else {
+    ret.broker["type"] = "orion"
+  }
+
+  switch (ret.broker.type) {
+    case "orion":
+    break;
+    case "kafka":
+    if (config.broker.kafka != undefined) {
+      ret.broker.kafka = {
+        "autoCommit": config.broker.kafka.autoCommit,
+        "fetchMaxWaitMs": config.broker.kafka.fetchMaxWaitMs,
+        "fetchMaxBytes": config.broker.kafka.fetchMaxBytes,
+        "groupId": config.broker.kafka.groupId,
+        "deviceNotificationTopic": config.broker.kafka.deviceNotificationTopic
+      }
+    }
+    break;
   }
 
   if (ret.mqtt.secure === true) {
