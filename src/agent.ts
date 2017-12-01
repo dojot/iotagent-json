@@ -2,6 +2,7 @@ import fs = require("fs");
 import util = require("util");
 import mqtt = require("mqtt");
 import mqttHandler = require("./mqtt-handler");
+import jsonpatch = require("../src/jsonpatch")
 import { ConfigOptions } from "./config";
 import { tokenize } from "./tools";
 import { DataBroker } from "./data-broker";
@@ -60,6 +61,25 @@ class Agent {
     console.log("Detected device ID: " + id);
 
     let deviceData = this.cacheHandler.lookup(id);
+    let translator = [];
+    // Find translators:
+    for (let template in deviceData.data.attrs) {
+      for (let cfgAttr of deviceData.data.attrs[template]) {
+        // Check for translators
+        // TODO This could be a meta-attribute 
+        if (cfgAttr.label === "translator" && cfgAttr.static_value != undefined) {
+          translator.push(JSON.parse(cfgAttr.static_value));
+        }
+      }
+    }
+
+    if (translator != undefined) {
+      console.log("There is a translator for this device.");
+      console.log("Translating message...");
+      messageObj = jsonpatch.apply_patch(messageObj, translator);
+      console.log("... message translated.");
+    }
+
     let filteredObj: any = {};
     // Message matches default message structure
     for (let attr in messageObj) {
