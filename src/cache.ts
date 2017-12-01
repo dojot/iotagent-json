@@ -1,14 +1,24 @@
 import util = require("util");
 
 
+/**
+ * Event data.
+ */
 interface DeviceManagerEventData {
+  // Device ID.
   id: string;
   [attrs: string] : any;
 }
 
+/**
+ * Event sent by device manager
+ */
 interface DeviceManagerEvent {
+  // Event type. Self-explanatory.
   event: "created" | "removed" | "updated";
+  // The event data. This should be the device data model.
   data: DeviceManagerEventData;
+  // Any extra meta-information.
   meta: any;
 }
 
