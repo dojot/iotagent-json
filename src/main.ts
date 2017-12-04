@@ -6,7 +6,6 @@ import {OrionHandler} from "./orion-handler";
 import {KafkaHandler} from "./kafka-handler";
 
 import { ConfigOptions, buildConfig } from "./config";
-import { CacheHandler, DeviceManagerEvent, IdResolver } from "./cache";
 
 function main() {
   // Simple sanity check. Configuration file must be present.
@@ -21,25 +20,8 @@ function main() {
       return console.error(err);
     }
     let configuration = buildConfig(JSON.parse(data.toString()));
-
-    let handler: DataBroker;
-    let cacheHandler = new CacheHandler();
-    let idResolver = new IdResolver();
-
-    if (configuration.broker.type == 'kafka') {
-      console.log("Creating kafka handler");
-      handler = new KafkaHandler(configuration, (event: DeviceManagerEvent) => {
-        cacheHandler.processEvent(event);
-        idResolver.processEvent(event);
-      });
-    } else if (configuration.broker.type == 'orion') {
-      handler = new OrionHandler(configuration);
-    } else {
-      throw new Error('Invalid broker configuration detected: ' + configuration.broker.type);
-    }
-
-    let agent = new Agent(configuration, handler, cacheHandler, idResolver);
-    agent.startMqtt();
+    let agent = new Agent(configuration);
+    agent.start();
   });
 }
 
