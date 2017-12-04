@@ -40,7 +40,7 @@ interface ResolverInstructions {
   regexp?: string
 
   // Physical device ID
-  id: string 
+  id: string
 
   // Any message property besides payload that could indicate message format.
   // This could be, for instance, MQTT topic.
@@ -74,7 +74,7 @@ class CacheHandler {
       case "created":
       case "updated":
       console.log("Inserting into cache new device description.");
-        this.cache[event.data.id] = event; 
+        this.cache[event.data.id] = event;
       break;
       case "removed":
       console.log("Removing from cache device description.");
@@ -105,7 +105,7 @@ class CacheHandler {
  * from a received message.
  */
 class IdResolver {
-  // The cache. 
+  // The cache.
   cache: {
     [id: string]: ResolverInstructions
   }
@@ -123,7 +123,7 @@ class IdResolver {
 
   /**
    * Extract all instructions to locate device ID.
-   * 
+   *
    * @param event The received device manager event
    * @returns A list of instructions to locate physical device ID from
    * a received message.
@@ -144,10 +144,10 @@ class IdResolver {
 
   /**
    * Process a device manager event.
-   * 
-   * All device ID location instructions will be gathered and 
+   *
+   * All device ID location instructions will be gathered and
    * saved to the cache.
-   * 
+   *
    * @param event The received event.
    */
   processEvent(event: DeviceManagerEvent) {
@@ -206,14 +206,15 @@ class IdResolver {
     switch (instruction.type) {
       case "mqtt-topic":
          dataSource = meta["topic"];
-      break;
+         break;
       case "message-attribute":
         // TODO: This attribute should be parsed and analyzed in-depth
-        if (data !== undefined && instruction.attribute_name !== undefined) { 
-          dataSource = data[instruction.attribute_name]; 
+        if (data !== undefined && instruction.attribute_name !== undefined) {
+          dataSource = data[instruction.attribute_name];
+        } else {
+          dataSource = "";
         }
-        else { dataSource = ""; }
-      break;
+        break;
       default:
         dataSource = "";
     }
