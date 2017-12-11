@@ -28,7 +28,7 @@ class Agent {
 
   // Cache which will hold everything (almost) received via kafka.
   cacheHandler: CacheHandler;
-  
+
   // Tool to find out the device ID from a received message.
   idResolver: IdResolver
 
@@ -48,14 +48,22 @@ class Agent {
     console.log('Got new MQTT message');
     console.log('Topic: ' + topic);
     console.log('Content:' + message);
-    let messageObj = JSON.parse(message);
+
+    let messageObj: any;
+    try {
+      messageObj = JSON.parse(message);
+    } catch (e) {
+      console.log('Failed to parse incoming data\n', e);
+      return
+    }
 
     // The message 'format' can be detected by its topic.
     // TODO: the user might choose to use this 'message topic format switch'
-    // as a "/device/+/deviceinfo" 
+    // as a "/device/+/deviceinfo"
     let id = this.idResolver.resolve(topic, messageObj, { "topic" : topic });
     if (id === "") {
-      console.log("No device ID was detected. Skipping this message.")
+      console.log("No device ID was detected. Skipping this message.");
+      // TODO emit iotagent warning
       return;
     }
     console.log("Detected device ID: " + id);
@@ -66,7 +74,7 @@ class Agent {
     for (let template in deviceData.data.attrs) {
       for (let cfgAttr of deviceData.data.attrs[template]) {
         // Check for translators
-        // TODO This could be a meta-attribute 
+        // TODO This could be a meta-attribute
         if (cfgAttr.label === "translator" && cfgAttr.static_value != undefined) {
           translator.push(JSON.parse(cfgAttr.static_value));
         }
@@ -106,8 +114,8 @@ class Agent {
    * Start MQTT message reception.
    */
   startMqtt() {
-    this.mqttContext = mqttHandler.start(this.configuration, 
-      (topic: string, message: string) => { this.processMessage(topic, message); }, 
+    this.mqttContext = mqttHandler.start(this.configuration,
+      (topic: string, message: string) => { this.processMessage(topic, message); },
       (error: Error) => { console.log("Error with MQTT operation: " + error); });
   }
 
