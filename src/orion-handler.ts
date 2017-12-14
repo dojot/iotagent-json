@@ -1,7 +1,7 @@
 import config = require("./config");
 import request = require("request");
 import util = require("util");
-import {DataBroker} from "./data-broker";
+import {DataBroker, MetaAttribute} from "./data-broker";
 
 class OrionHandler implements DataBroker {
   host: string;
@@ -20,12 +20,26 @@ class OrionHandler implements DataBroker {
     }
   }
 
-  updateData(service: string, deviceId: string, attributes: any) {
+  updateData(service: string, deviceId: string, attributes: any, metaAttributes: MetaAttribute) {
     let updateData: any = { }
 
-    for (let attr in attributes) {
-      updateData[attr] = {
-        "value": attributes[attr]
+    
+    if (metaAttributes.TimeInstant != undefined) {
+      for (let attr in attributes) {
+        updateData[attr] = {
+          "value": attributes[attr],
+          "metadata": {
+            "name" : "TimeInstant",
+            "type": "ISO8601",
+            "value" : metaAttributes.TimeInstant
+          }
+        }
+      }
+    } else {
+      for (let attr in attributes) {
+        updateData[attr] = {
+          "value": attributes[attr]
+        }
       }
     }
 

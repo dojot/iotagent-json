@@ -5,7 +5,7 @@ import mqttHandler = require("./mqtt-handler");
 import jsonpatch = require("../src/jsonpatch")
 import { ConfigOptions } from "./config";
 import { tokenize } from "./tools";
-import { DataBroker } from "./data-broker";
+import { DataBroker , MetaAttribute} from "./data-broker";
 import { IdResolver, CacheHandler } from "./cache";
 import { resolve } from "url";
 
@@ -88,6 +88,11 @@ class Agent {
       console.log("... message translated.");
     }
 
+    let metaData: MetaAttribute = { };
+    if (messageObj["TimeInstant"] != undefined) {
+      metaData.TimeInstant = messageObj["TimeInstant"];
+    }
+
     let filteredObj: any = {};
     // Message matches default message structure
     for (let attr in messageObj) {
@@ -107,7 +112,7 @@ class Agent {
     console.log("Service: " + deviceData.meta.service);
     console.log("Data: ");
     console.log(util.inspect(filteredObj, {depth: null}));
-    this.dataBroker.updateData(deviceData.meta.service, id, filteredObj);
+    this.dataBroker.updateData(deviceData.meta.service, id, filteredObj, metaData);
   }
 
   /**

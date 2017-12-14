@@ -1,6 +1,6 @@
 import config = require("./config");
 import util = require("util");
-import {DataBroker} from "./data-broker";
+import {DataBroker, MetaAttribute} from "./data-broker";
 import kafka = require("kafka-node");
 import { DeviceManagerEvent } from "./cache";
 
@@ -115,12 +115,21 @@ class KafkaHandler implements DataBroker {
   }
 
   // sends received device event to configured kafka topic
-  updateData(service: string, deviceId: string, attributes: any) {
+  updateData(service: string, deviceId: string, attributes: any, metaAttributes: MetaAttribute) {
     if (this.isProducerReady === false) {
       console.log("Kafka producer is not yet ready.");
       return;
     }
     
+    if (metaAttributes.TimeInstant != undefined) {
+      for (let attr of attributes) {
+        // Only timestamp will be updated for now
+        attr["meta"] = {
+          TimeInstant: metaAttributes.TimeInstant
+        }
+      }
+    }
+
     let updateData: any = {
       "metadata": {
         "deviceid": deviceId,
