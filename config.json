@@ -1,10 +1,10 @@
 {
   "mqtt": {
     "host": "mqtt",
-    "port" : 8883,
+    "port" : 1883,
     "protocolId": "MQIsdp",
     "protocolVersion": 3,
-    "secure": true,
+    "secure": false,
     "tls": {
       "key": "certs/iotagent.key",
       "cert": "certs/iotagent.crt",
