@@ -12,10 +12,11 @@ interface DeviceManagerEventData {
 
 /**
  * Event sent by device manager
+ * TODO: maybe these definitions might be somewhere else.
  */
 interface DeviceManagerEvent {
   // Event type. Self-explanatory.
-  event: "created" | "removed" | "updated";
+  event: "create" | "remove" | "update" | "configure";
   // The event data. This should be the device data model.
   data: DeviceManagerEventData;
   // Any extra meta-information.
@@ -71,19 +72,16 @@ class CacheHandler {
     console.log("Received event: " + util.inspect(event, { depth: null}));
 
     switch (event.event) {
-      case "created":
-      case "updated":
+      case "create":
+      case "update":
       console.log("Inserting into cache new device description.");
         this.cache[event.data.id] = event;
       break;
-      case "removed":
+      case "remove":
       console.log("Removing from cache device description.");
         delete this.cache[event.data.id]
       break;
     }
-
-    console.log("Cache so far: ");
-    console.log(util.inspect(this.cache, {depth: null}));
   }
 
   /**
@@ -159,8 +157,8 @@ class IdResolver {
     }
 
     switch (event.event) {
-      case "created":
-      case "updated":
+      case "create":
+      case "update":
         console.log("Inserting into resolver new ID resolution instruction.");
         for (let instruction of idLocations) {
           console.log("Instruction: " + util.inspect(instruction, {depth: null}));
@@ -168,7 +166,7 @@ class IdResolver {
           this.idCache[instruction.id] = event.data.id;
         }
       break;
-      case "removed":
+      case "remove":
         console.log("Removing from resolver an ID resolution instruction.");
         for (let instruction of idLocations) {
           delete this.cache[instruction.xid];
@@ -176,11 +174,6 @@ class IdResolver {
         }
       break;
     }
-
-    console.log("Cache so far: ");
-    console.log(util.inspect(this.cache, {depth: null}));
-    console.log("ID Cache so far: ");
-    console.log(util.inspect(this.idCache, {depth: null}));
   }
 
   /**

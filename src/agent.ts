@@ -5,9 +5,12 @@ import mqttHandler = require("./mqtt-handler");
 import jsonpatch = require("../src/jsonpatch")
 import { ConfigOptions } from "./config";
 import { tokenize } from "./tools";
-import { DataBroker , MetaAttribute} from "./data-broker";
-import { IdResolver, CacheHandler } from "./cache";
+import { DataBroker, MetaAttribute } from "./data-broker";
+import { IdResolver, CacheHandler, DeviceManagerEvent } from "./cache";
 import { resolve } from "url";
+import { publish } from "./mqtt-handler";
+import { OrionHandler } from "./orion-handler";
+import { KafkaHandler } from "./kafka-handler";
 
 /**
  * IoT agent class
@@ -32,19 +35,46 @@ class Agent {
   // Tool to find out the device ID from a received message.
   idResolver: IdResolver
 
-  constructor(config: ConfigOptions, dataBroker: DataBroker, cache: CacheHandler, resolver: IdResolver) {
+  constructor(config: ConfigOptions) {
+    if ((config.broker.type !== 'kafka') && (config.broker.type !== 'orion')) {
+      throw new Error('Invalid broker configuration detected: ' + config.broker.type);
+    }
+
     this.configuration = config;
-    this.dataBroker = dataBroker;
-    this.cacheHandler = cache;
-    this.idResolver = resolver;
-  };
+    this.cacheHandler = new CacheHandler();
+    this.idResolver = new IdResolver();
+  }
+
+  start() {
+    // Start MQTT communication
+    this.mqttContext = mqttHandler.start(this.configuration,
+      // We must not loose the 'this' reference.
+      (topic: string, message: string) => { this.processMqttMessage(topic, message); },
+      (error: Error) => {
+        console.log("Error with MQTT operation: " + error);
+      });
+
+    // Start data broker (kafka or orion) communication
+    switch (this.configuration.broker.type) {
+      case "kafka":
+        this.dataBroker = new KafkaHandler(this.configuration,
+          // We must not loose the 'this' reference.
+          (event: DeviceManagerEvent) => { this.processKafkaMessage(event) });
+        break;
+      case 'orion':
+        this.dataBroker = new OrionHandler(this.configuration);
+        break;
+      default:
+        throw new Error('Invalid broker configuration detected: ' + this.configuration.broker.type);
+    }
+  }
 
   /**
    * Process a message received via MQTT
    * @param {string} topic The topic through which the message was published
    * @param {string} message The received message
    */
-  processMessage(topic: string, message: string): void {
+  processMqttMessage(topic: string, message: string): void {
     console.log('Got new MQTT message');
     console.log('Topic: ' + topic);
     console.log('Content:' + message);
@@ -60,7 +90,7 @@ class Agent {
     // The message 'format' can be detected by its topic.
     // TODO: the user might choose to use this 'message topic format switch'
     // as a "/device/+/deviceinfo"
-    let id = this.idResolver.resolve(topic, messageObj, { "topic" : topic });
+    let id = this.idResolver.resolve(topic, messageObj, { "topic": topic });
     if (id === "") {
       console.log("No device ID was detected. Skipping this message.");
       // TODO emit iotagent warning
@@ -88,7 +118,7 @@ class Agent {
       console.log("... message translated.");
     }
 
-    let metaData: MetaAttribute = { };
+    let metaData: MetaAttribute = {};
     if (messageObj["TimeInstant"] != undefined) {
       metaData.TimeInstant = messageObj["TimeInstant"];
     }
@@ -111,27 +141,28 @@ class Agent {
     console.log("Device ID: " + id);
     console.log("Service: " + deviceData.meta.service);
     console.log("Data: ");
-    console.log(util.inspect(filteredObj, {depth: null}));
+    console.log(util.inspect(filteredObj, { depth: null }));
     this.dataBroker.updateData(deviceData.meta.service, id, filteredObj, metaData);
   }
 
-  /**
-   * Start MQTT message reception.
-   */
-  startMqtt() {
-    this.mqttContext = mqttHandler.start(this.configuration,
-      (topic: string, message: string) => { this.processMessage(topic, message); },
-      (error: Error) => { console.log("Error with MQTT operation: " + error); });
-  }
-
-  /**
-   * Stop MQTT message reception.
-   */
-  stopMqtt() {
-    mqttHandler.stop(this.mqttContext, (error: Error) => {
-      console.log("Error with MQTT operation: " + error);
-    });
-  }
+  processKafkaMessage(event: DeviceManagerEvent) {
+    switch (event.event) {
+      case "create":
+      case "remove":
+      case "update":
+        this.cacheHandler.processEvent(event);
+        this.idResolver.processEvent(event);
+        break;
+      case "configure":
+        // TODO The message could be verified if it is
+        // valid.
+        publish(this.mqttContext, event.meta["topic"], event.data);
+        break;
+      default:
+    }
+  };
 }
 
-export {Agent};
+
+export { Agent };
+
