@@ -92,6 +92,11 @@ function start(config: ConfigOptions, messageCallback: (topic: string, message:s
   return mqttClient;
 }
 
+function publish(client: mqtt.Client, topic: string, message: any) {
+  let objStr = JSON.stringify(message);
+  client.publish(topic, objStr);
+}
 
 export {start};
 export {stop};
+export { publish };
