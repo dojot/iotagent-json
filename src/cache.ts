@@ -153,7 +153,13 @@ class IdResolver {
 
     if (idLocations.length == 0) {
       console.log("No ID location was found.")
-      return;
+      console.log("Falling back to /SERVICE/ID/attrs scheme.");
+      let instruction : ResolverInstructions = {
+        type : "mqtt-topic",
+        xid: "/" + event.meta["service"] + "/" + event.data.id + "/attrs",
+        id : "/" + event.meta["service"] + "/" + event.data.id + "/attrs"
+      }
+      idLocations = [ instruction ];
     }
 
     switch (event.event) {
