@@ -63,7 +63,7 @@ class KafkaHandler implements DataBroker {
       case "producer":
         if (config.broker.type === "kafka") {
           console.log("Creating Kafka producer...");
-          let client = new kafka.Client(config.broker.host, "iotagent-json-" +  Math.floor(Math.random() * 10000));
+          let client = new kafka.Client(config.broker.host, "iotagent-json-producer-" +  Math.floor(Math.random() * 10000));
           console.log("... Kafka client for producer is ready.");
           console.log("Creating Kafka producer...");
           this.producer = new kafka.HighLevelProducer(client, { requireAcks: 1 });
@@ -94,7 +94,7 @@ class KafkaHandler implements DataBroker {
         // First try
         // Creating consumer client - from device manager to iotagent.
         // This is always used.
-        let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-" +  Math.floor(Math.random() * 10000));
+        let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer-" +  Math.floor(Math.random() * 10000));
         console.log("... Kafka client for consumer is ready.");
         console.log("Creating Kafka consumer...");
         this.consumer = new kafka.HighLevelConsumer(client, config.device_manager.kafkaTopics, config.device_manager.kafkaOptions);
