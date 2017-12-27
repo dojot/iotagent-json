@@ -11,7 +11,6 @@ import { resolve } from "url";
 import { publish } from "./mqtt-handler";
 import { OrionHandler } from "./orion-handler";
 import { KafkaHandler } from "./kafka-handler";
-import { KafkaClient } from "kafka-node";
 
 /**
  * IoT agent class
