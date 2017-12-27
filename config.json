@@ -13,19 +13,20 @@
     }
   },
   "broker": {
-    "host": "zookeeper:2181",
-    "type": "kafka",
-    "kafka": {
+    "host": "orion:1026",
+    "type": "orion"
+  },
+  "device_manager": {
+    "host": "device-manager:5000",
+    "kafkaHost" : "zookeeper:2181",
+    "kafkaOptions": {
       "autoCommit": true,
       "fetchMaxWaitMs" : 1000,
       "fetchMaxBytes" : 1048576,
-      "groupId" : "iotagent",
-      "deviceNotificationTopic": [
+      "groupId" : "iotagent"
+    },
+    "kafkaTopics": [
         { "topic": "dojot.device-manager.device" }
       ]
-    }
-  },
-  "device_manager": {
-    "host": "device-manager:5000"
   }
 }
