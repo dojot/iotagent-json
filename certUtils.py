@@ -140,7 +140,7 @@ def signCert(EJBCA_API_URL, csrFile, CName, passwd):
         "certificate": cutDownCLR
     })
 
-    response = requests.post(EJBCA_API_URL + "/user/" + CName + "/pkcs10",
+    response = requests.post(EJBCA_API_URL + "/sign/" + CName + "/pkcs10",
                              headers=defaultHeader, data=req)
 
     if response.status_code == 200:
