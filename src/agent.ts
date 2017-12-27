@@ -11,6 +11,7 @@ import { resolve } from "url";
 import { publish } from "./mqtt-handler";
 import { OrionHandler } from "./orion-handler";
 import { KafkaHandler } from "./kafka-handler";
+import { KafkaClient } from "kafka-node";
 
 /**
  * IoT agent class
@@ -25,6 +26,9 @@ class Agent {
   // MQTT Context used by this agent.
   // This is only necessary when stopping MQTT.
   mqttContext: mqtt.Client;
+
+  // Kafka is always there.
+  kafkaHandler: KafkaHandler;
 
   // Broker which will receive device update messages.
   dataBroker: DataBroker;
@@ -52,14 +56,13 @@ class Agent {
       (topic: string, message: string) => { this.processMqttMessage(topic, message); },
       (error: Error) => {
         console.log("Error with MQTT operation: " + error);
-      });
+    });
 
+    this.kafkaHandler = new KafkaHandler(this.configuration, (event: DeviceManagerEvent) => { this.processKafkaMessage(event) });
     // Start data broker (kafka or orion) communication
     switch (this.configuration.broker.type) {
       case "kafka":
-        this.dataBroker = new KafkaHandler(this.configuration,
-          // We must not loose the 'this' reference.
-          (event: DeviceManagerEvent) => { this.processKafkaMessage(event) });
+        this.dataBroker = this.kafkaHandler;
         break;
       case 'orion':
         this.dataBroker = new OrionHandler(this.configuration);
