@@ -5,7 +5,7 @@ import {DataBroker} from "./data-broker";
 import {OrionHandler} from "./orion-handler";
 import {KafkaHandler} from "./kafka-handler";
 
-import { ConfigOptions, buildConfig } from "./config";
+import { ConfigOptions } from "./config";
 
 function main() {
   // Simple sanity check. Configuration file must be present.
@@ -19,7 +19,8 @@ function main() {
     if (err) {
       return console.error(err);
     }
-    let configuration = buildConfig(JSON.parse(data.toString()));
+    let configuration: ConfigOptions = JSON.parse(data.toString());
+    console.log("Detected configuration: " + util.inspect(configuration, {depth: null}));
     let agent = new Agent(configuration);
     agent.start();
   });
