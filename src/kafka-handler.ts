@@ -18,37 +18,6 @@ class KafkaHandler implements DataBroker {
   // Main consumer.
   private consumer: kafka.HighLevelConsumer;
 
-
-  /**
-   * Finish Kafka configuration.
-   * 
-   * If the consuimer creation fails, it will be tried again after one second.
-   * 
-   * @param config The configuration being used.
-   * @param client Kafka client
-   * @param callback The callback to be invoked when a device manager event is received.
-   */
-  private finishKafkaConfiguration(config: config.ConfigOptions, client: kafka.Client, callback: (data: DeviceManagerEvent) => void) {
-    this.isProducerReady = true;
-
-    console.log("Creating Kafka consumer...");
-    this.consumer = new kafka.HighLevelConsumer(client, config.device_manager.kafkaTopics, config.device_manager.kafkaOptions);
-    // Kafka consumer events registration
-    this.consumer.on("message", (data) => {
-      let parsedData = JSON.parse(data.value.toString());
-      callback(parsedData);
-    });
-    this.consumer.on("error", (err) => {
-        console.log("Error: ", err);
-        console.log("Will try again in a few seconds.");
-        setTimeout(() => {
-          console.log("Trying again.");
-          this.finishKafkaConfiguration(config, client, callback);
-        }, 1000)
-    });
-    console.log("... Kafka consumer created and callbacks registered.");
-  }
-
   /**
    * Start Kafka configuration.
    * 
@@ -113,19 +82,7 @@ class KafkaHandler implements DataBroker {
         });
 
         console.log("... Kafka consumer created and callbacks registered.");
-        this.initKafkaConfiguration(config, callback, "finish");
         break;
-      case "finish":
-        if (config.broker.type === "kafka") {
-          let topics = [];
-          for (let topic of config.device_manager.kafkaTopics) {
-            topics.push(topic.topic);
-          }
-          console.log("Creating topics for consumer...");
-          this.producer.createTopics(topics, false, (err, data) => { });
-          console.log("... all topics were created.");
-        }
-      break;
     }
   }
 
@@ -138,7 +95,6 @@ class KafkaHandler implements DataBroker {
     // Block any communication before producer is properly created.
     this.isProducerReady = false;
     this.initKafkaConfiguration(config, callback, "producer");
-    console.log("... producer creation initialized and callbacks registered.");
   }
 
   // sends received device event to configured kafka topic
