@@ -17,7 +17,6 @@
     "type": "orion"
   },
   "device_manager": {
-    "host": "device-manager:5000",
     "kafkaHost" : "zookeeper:2181",
     "kafkaOptions": {
       "autoCommit": true,

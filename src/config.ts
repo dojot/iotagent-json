@@ -60,10 +60,6 @@ interface BrokerOptions {
 
 // Device manager options
 interface DeviceManagerOptions {
-  // Device manager address.
-  // This attribute includes port, such as localhost:4000.
-  host: string;
-
   // This is which kakfa node is used by device manager to 
   // broadcast its devices updates.
   kafkaHost: string;
