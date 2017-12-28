@@ -7,18 +7,18 @@
 IoT agents are responsible for receiving messages from physical devices (directly or through a gateway) and sending them commands in order to configure them. This iotagent-json, in particular, receives messages via MQTT with JSON payloads.
 
 ## How does it work
-The iotagent-json depends on two things: a Kafka broker, so that it can receive messages informing it about new devices (and, in extension, about their updates and removals), and, obviously, a MQTT broker, so that it can receive messages from the devices. It waits for messages sent through these two elements: from device manager with a management operation on a device and from the MQTT broker with a message sent by a device.
+iotagent-json depends on two things: a Kafka broker, so that it can receive messages informing it about new devices (and, in extension, about their updates and removals), and a MQTT broker, so that it can receive messages from the devices. It waits for messages sent through these two elements: from the device manager with a management operation on a device and from the MQTT broker with a message sent by a device.
 
 ### MQTT
-MQTT is a somewhat simple protocol: it follows a publish/subscriber paradigm and messages are sent to and fro through topics. These topics are simple strings containing tokens separated by forward slashes, such as "/admin/cafe/attrs". A publisher can, well, publish messages by sending them to a MQTT broker using a particular topic and all the subscribers that are listening to that topic will receive a copy of the message.
+MQTT is a somewhat simple protocol: it follows a publish/subscriber paradigm and messages are exchanged using topics. These topics are simple strings such as "/admin/cafe/attrs". A publisher can, well, publish messages by sending them to a MQTT broker using a particular topic and all the subscribers that are listening to that topic will receive a copy of the message.
 
 Subscribers can listen not only to specific topics, but also to topics with wildcards. For instance, one could use a '+' to indicate that any token will match the subscribed topic, such as "/admin/+/attrs" - messages sent to both "/admin/cafe/attrs" and "/admin/4593/attrs", for instance, will be received by this subscriber. Another possibility is to create a subscription to all remainder tokens in the topic, such as "/admin/#". All messages sent to topics beginning with "/admin/" will be received by this subscriber.
 
 ### Kafka
-Kafka is, in fact, a project from the [Apache Foundation](https://kafka.apache.org). It is a messaging system that is similar to MQTT in the sense that both are based on publisher/subscriber. Kafka is way more complex and robust - it deals with multiple subscribers belonging to the same group (and performs load-balancing between them), stores and replays messages, and so on. The side effect is that its clients are not that simple, which could be a burden for small devices (that's why Kafka is not the first thought when choosing protocols for this).
+Kafka is, in fact, a project from the [Apache Foundation](https://kafka.apache.org). It is a messaging system that is similar to MQTT in the sense that both are based on publisher/subscriber. Kafka is way more complex and robust - it deals with multiple subscribers belonging to the same group (and performs load-balancing between them), stores and replays messages, and so on. The side effect is that its clients are not that simple, which could be a heavy burden for tiny devices.
 
-### Receiving messages from device manager via Kafka
-The supported message format from device manager is:
+### Receiving messages from the device manager via Kafka
+The supported message format from the device manager is:
 ```
 {
   meta: {
