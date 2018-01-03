@@ -22,24 +22,42 @@ Kafka is, in fact, a project from the [Apache Foundation](https://kafka.apache.o
 
 ### Receiving messages from the device manager via Kafka
 
-The supported message format from the device manager is:
+There are two types of messages supported:
 
 ```json
 {
-  meta: {
-    service: "admin", -> for creation
-    topic: "/admin/cafe/attrs", -> for configuration
-    id: "cafe" -> for configuration
+  "event": "create",
+  "meta": {
+    "service": "admin"
   },
-  data: {
-    id: "cafe",
-    ...
-  },
-  event: "create" | "update" | "remove" | "configure"
+  "data": {
+    "id": "cafe",
+    "attrs" : {
+
+    }
+  }
 }
 ```
 
-The topic is configurable through config.json file.
+The "event" field can have any of these values (for this message format):  "create", "update" or "remove".
+
+The 'attrs' subfield is the same as the one sent to DeviceManager. Visit [this link](https://dojot.github.io/device-manager/concepts.html) to check out its format. The other format is quite similar - it's used to send configurations to devices.
+
+```json
+{
+  "event": "configure",
+  "meta": {
+    "topic": "/admin/cafe/attrs",
+    "id": "cafe"
+  },
+  "data": {
+    "id": "cafe"
+  },
+  "device-attr1": "value"
+}
+```
+
+This request will send a message containing this request to the device.
 
 ### Receiving messages from devices via MQTT
 
@@ -57,15 +75,15 @@ But, if not desired or feasible, this can be a little more flexible. Its structu
 
 ```json
 {
-  data: {
-    first_: {
-      temperature: {
-        type: "float",
-        value: 10.5
+  "data": {
+    "first_": {
+      "temperature": {
+        "type": "float",
+        "value": 10.5
       },
-      pressure: {
-        type: "float",
-        value: 750
+      "pressure": {
+        "type": "float",
+        "value": 750
       }
     }
   }
@@ -76,13 +94,12 @@ This allows the following structure to be constructed:
 
 ```json
 {
-  temperature: 10.5,
-  pressure: 750
+  "temperature": 10.5,
+  "pressure": 750
 }
 ```
 
 which is ok. This transformation is done by "translator" instructions associated to the device, which are explained in detail in other document.
-
 
 ## Configuration
 
