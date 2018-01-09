@@ -6,3 +6,4 @@
 .project
 .metadata
 npm-debug.log
+.idea/
