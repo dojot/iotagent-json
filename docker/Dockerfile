@@ -6,10 +6,10 @@ RUN apt-get update \
     && apt-get install -y python-pip \
     &&  pip install pyopenssl
 
-COPY . /opt/iotagent-json/
+COPY . .
 RUN npm install && npm run-script build
 
-RUN chmod +x /opt/iotagent-json/entrypoint.sh \
-    && mkdir /opt/iotagent-json/certs
+RUN chmod +x entrypoint.sh \
+    && mkdir certs
 
-CMD ["/opt/iotagent-json/entrypoint.sh"]
+ENTRYPOINT ["entrypoint.sh"]
