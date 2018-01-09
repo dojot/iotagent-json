@@ -12,4 +12,4 @@ RUN npm install && npm run-script build
 RUN chmod +x /opt/iotagent-json/entrypoint.sh \
     && mkdir /opt/iotagent-json/certs
 
-CMD ["/opt/iotagent-json/entrypoint.sh"]
+ENTRYPOINT ["/opt/iotagent-json/entrypoint.sh"]
