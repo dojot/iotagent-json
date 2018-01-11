@@ -12,4 +12,4 @@ RUN npm install && npm run-script build
 RUN chmod +x entrypoint.sh \
     && mkdir certs
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
