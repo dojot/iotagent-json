@@ -56,7 +56,7 @@ class KafkaHandler implements DataBroker {
               setTimeout(() => {
                 console.log("Trying again.");
                 this.initKafkaConfiguration(config, callback, "producer");
-              }, 100);
+              }, 10000);
           });
           console.log("... Kafka producer created and callbacks registered.");
         } else {
@@ -95,7 +95,7 @@ class KafkaHandler implements DataBroker {
           setTimeout(() => {
             console.log("Trying again.");
             this.initKafkaConfiguration(config, callback, "consumer");
-          }, 100)
+          }, 10000)
         });
 
         console.log("... Kafka consumer created and callbacks registered.");
