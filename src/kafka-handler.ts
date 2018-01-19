@@ -28,6 +28,7 @@ class KafkaHandler implements DataBroker {
    * @param callback The callback to be invoked when a device manager event is received.
    */
   private initKafkaConfiguration(config: config.ConfigOptions, callback: (data: DeviceManagerEvent) => void, type: string) {
+    let isScheduled = false;
     switch (type) {
       case "producer":
         if (config.broker.type === "kafka") {
@@ -44,12 +45,18 @@ class KafkaHandler implements DataBroker {
             this.initKafkaConfiguration(config, callback, "consumer");
           });
           this.producer.on("error", (e) => { 
+            if (isScheduled == true) {
+              console.log("An operation was already scheduled. No need to do it again.");
+              return;
+            }
+            this.producer.close();
+            isScheduled = true;
             console.error("Error: ", e); 
-            console.log("Will try again in a few seconds.");
-            setTimeout(() => {
-              console.log("Trying again.");
-              this.initKafkaConfiguration(config, callback, "producer");
-            }, 1000)
+            console.log("Will try again to create Kafka producer in a few seconds.");
+              setTimeout(() => {
+                console.log("Trying again.");
+                this.initKafkaConfiguration(config, callback, "producer");
+              }, 10000);
           });
           console.log("... Kafka producer created and callbacks registered.");
         } else {
@@ -73,12 +80,22 @@ class KafkaHandler implements DataBroker {
           callback(parsedData);
         });
         this.consumer.on("error", (err) => {
-            console.log("Error: ", err);
-            console.log("Will try again in a few seconds.");
-            setTimeout(() => {
-              console.log("Trying again.");
-              this.initKafkaConfiguration(config, callback, "consumer");
-            }, 1000)
+          if (isScheduled == true) {
+            console.log("An operation was already scheduled. No need to do it again.");
+            return;
+          }
+          console.log("Closing current consumer.");
+          this.consumer.close(true, (e) => { 
+            console.log("Result of consumer close operation: " + e);
+          });
+
+          isScheduled = true;
+          console.log("Error: ", err);
+          console.log("Will try again to create Kafka consumer in a few seconds.");
+          setTimeout(() => {
+            console.log("Trying again.");
+            this.initKafkaConfiguration(config, callback, "consumer");
+          }, 10000)
         });
 
         console.log("... Kafka consumer created and callbacks registered.");
