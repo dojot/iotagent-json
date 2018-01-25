@@ -24,6 +24,7 @@
   },
   "keywords": [],
   "dependencies": {
+    "axios": "^0.17.1",
     "js-base64": "^2.3.2",
     "kafka-node": "^2.3.0",
     "mqtt": "^1.14.1",
