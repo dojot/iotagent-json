@@ -13,8 +13,8 @@
     }
   },
   "broker": {
-    "host": "orion:1026",
-    "type": "orion"
+    "host": "zookeeper:2181",
+    "type": "kafka"
   },
   "device_manager": {
     "kafkaHost" : "zookeeper:2181",
