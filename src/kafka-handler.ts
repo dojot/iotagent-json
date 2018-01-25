@@ -1,15 +1,21 @@
-import config = require("./config");
 import util = require("util");
-import {DataBroker, MetaAttribute} from "./data-broker";
 import kafka = require("kafka-node");
+import axios, {AxiosResponse, AxiosError} from 'axios';
+import config = require("./config");
+import {DataBroker, MetaAttribute} from "./data-broker";
 import { DeviceManagerEvent } from "./cache";
 
 /**
  * Class responsible for Kafka messaging
  */
-class KafkaHandler implements DataBroker {
+export class KafkaHandler implements DataBroker {
   // Broker IP address and port.
   host: string;
+
+  // Maps tenants to kafka topics
+  topicMap: {[id: string]: string};
+  private publishingSubject: string;
+  private contextBroker: string;
 
   // Main producer.
   private producer: kafka.HighLevelProducer;
@@ -19,12 +25,29 @@ class KafkaHandler implements DataBroker {
   private consumer: kafka.HighLevelConsumer;
 
   /**
+   * @param config The configuration to be used.
+   * @param callback A callback that will process received device manager notifications
+   */
+  constructor(config: config.ConfigOptions, callback: (data: DeviceManagerEvent) => void) {
+    // Block any communication before producer is properly created.
+    this.isProducerReady = false;
+    this.initKafkaConfiguration(config, callback, "producer");
+
+    if (config.broker.type == 'kafka') {
+      this.contextBroker = config.broker.contextBroker ? config.broker.contextBroker : 'data-broker';
+      this.publishingSubject = config.broker.subject ? config.broker.subject : 'device-data';
+      this.topicMap = {};
+    }
+  }
+
+  /**
    * Start Kafka configuration.
-   * 
+   *
    * If the producer creation fails, it will be tried again after one second.
-   * 
-   * @param config The configuration being used.
-   * @param client Kafka clinet
+   * TODO make retry period (or even attempt) configurable
+   *
+   * @param config   The configuration being used.
+   * @param client   Kafka clinet
    * @param callback The callback to be invoked when a device manager event is received.
    */
   private initKafkaConfiguration(config: config.ConfigOptions, callback: (data: DeviceManagerEvent) => void, type: string) {
@@ -37,21 +60,21 @@ class KafkaHandler implements DataBroker {
           console.log("... Kafka client for producer is ready.");
           console.log("Creating Kafka producer...");
           this.producer = new kafka.HighLevelProducer(client, { requireAcks: 1 });
-      
+
           // Kafka producer events registration
           this.producer.on("ready", () => {
             console.log("... Kafka producer creation finished.");
             this.isProducerReady = true;
             this.initKafkaConfiguration(config, callback, "consumer");
           });
-          this.producer.on("error", (e) => { 
+          this.producer.on("error", (e) => {
             if (isScheduled == true) {
               console.log("An operation was already scheduled. No need to do it again.");
               return;
             }
             this.producer.close();
             isScheduled = true;
-            console.error("Error: ", e); 
+            console.error("Error: ", e);
             console.log("Will try again to create Kafka producer in a few seconds.");
               setTimeout(() => {
                 console.log("Trying again.");
@@ -70,57 +93,97 @@ class KafkaHandler implements DataBroker {
         // First try
         // Creating consumer client - from device manager to iotagent.
         // This is always used.
-        let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer-" +  Math.floor(Math.random() * 10000));
+        // let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer-" +  Math.floor(Math.random() * 10000));
+        let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer");
         console.log("... Kafka client for consumer is ready.");
         console.log("Creating Kafka consumer...");
-        this.consumer = new kafka.HighLevelConsumer(client, config.device_manager.kafkaTopics, config.device_manager.kafkaOptions);
-        // Kafka consumer events registration
-        this.consumer.on("message", (data) => {
-          let parsedData = JSON.parse(data.value.toString());
-          callback(parsedData);
-        });
-        this.consumer.on("error", (err) => {
-          if (isScheduled == true) {
-            console.log("An operation was already scheduled. No need to do it again.");
-            return;
+        this.getPublishTopic('admin', config.device_manager.inputSubject, (err?:any, topic?: string) => {
+          if (err || (topic == undefined)) {
+            console.error('Failed to retrieve input topic');
+            process.exit(1);
           }
-          console.log("Closing current consumer.");
-          this.consumer.close(true, (e) => { 
-            console.log("Result of consumer close operation: " + e);
+
+          const kafkaTopic: kafka.Topic =  { 'topic': topic! };
+          this.consumer = new kafka.HighLevelConsumer(client, [kafkaTopic], config.device_manager.kafkaOptions);
+          // Kafka consumer events registration
+          this.consumer.on("message", (data) => {
+            let parsedData = JSON.parse(data.value.toString());
+            callback(parsedData);
+          });
+          this.consumer.on("error", (err) => {
+            if (isScheduled == true) {
+              console.log("An operation was already scheduled. No need to do it again.");
+              return;
+            }
+            console.log("Closing current consumer.");
+            this.consumer.close(true, (e) => {
+              console.log("Result of consumer close operation: " + e);
+            });
+
+            isScheduled = true;
+            console.log("Error: ", err);
+            console.log("Will try again to create Kafka consumer in a few seconds.");
+            setTimeout(() => {
+              console.log("Trying again.");
+              this.initKafkaConfiguration(config, callback, "consumer");
+            }, 10000)
           });
 
-          isScheduled = true;
-          console.log("Error: ", err);
-          console.log("Will try again to create Kafka consumer in a few seconds.");
-          setTimeout(() => {
-            console.log("Trying again.");
-            this.initKafkaConfiguration(config, callback, "consumer");
-          }, 10000)
-        });
-
-        console.log("... Kafka consumer created and callbacks registered.");
+          console.log("... Kafka consumer created and callbacks registered.");
+        })
         break;
     }
   }
 
   /**
-   * 
-   * @param config The configuration to be used.
-   * @param callback A callback that will process received device manager notifications
+   * Retrieves managed topic id based on given tenant and subject
+   * @param  tenant   Tenant for which a topic is to be retrieved
+   * @param  subject  Subject of the topic to be retrieved
+   * @param  callback Who to call once a topic is obtained
+   * @return void
    */
-  constructor(config: config.ConfigOptions, callback: (data: DeviceManagerEvent) => void) {
-    // Block any communication before producer is properly created.
-    this.isProducerReady = false;
-    this.initKafkaConfiguration(config, callback, "producer");
+  private getPublishTopic(tenant: string, subject: string, callback: (err?: any, topic?:string) => void): void {
+    if (tenant in this.topicMap) {
+      callback(undefined, this.topicMap[tenant]);
+    }
+
+    function generateJWT() {
+      const payload = {
+        'service': tenant,
+        'username': 'iotagent'
+      }
+      return (new Buffer('dummy jwt schema').toString('base64')) + '.'
+             + (new Buffer(JSON.stringify(payload)).toString('base64')) + '.'
+             + (new Buffer('dummy signature').toString('base64'));
+
+    }
+
+    axios({
+      'url': this.contextBroker + '/topic/' + subject,
+      'method': 'get',
+      'headers': {'authorization': 'Bearer ' + generateJWT()}
+    }).then((response: AxiosResponse) => {
+      this.topicMap[tenant] = response.data.topic;
+      callback(undefined, this.topicMap[tenant]);
+    }).catch((error: AxiosError) => {
+      callback(error.message, undefined);
+    })
   }
 
-  // sends received device event to configured kafka topic
+  /**
+   * sends received device event to configured kafka topic
+   * @param  service        Tenant which oversees the device
+   * @param  deviceId       Device from which data originated
+   * @param  attributes     Actual device data
+   * @param  metaAttributes Event metadata
+   * @return void
+   */
   updateData(service: string, deviceId: string, attributes: any, metaAttributes: MetaAttribute) {
     if (this.isProducerReady === false) {
       console.log("Kafka producer is not yet ready.");
       return;
     }
-    
+
     if (metaAttributes.TimeInstant != undefined) {
       for (let attr of attributes) {
         // Only timestamp will be updated for now
@@ -139,20 +202,25 @@ class KafkaHandler implements DataBroker {
       "attrs": attributes
     }
 
-    let message: any = {
-      "topic": "devices_" + service,
-      "messages": [JSON.stringify(updateData)]
-    }
-
-    console.log("About to update device " + deviceId + " data");
-    this.producer.send([message], (err: any, result: any) => {
-      if (err) {
-        console.error("Failed to update device data", err);
-      } else {
-        console.log("message away", result);
+    this.getPublishTopic(service, this.publishingSubject, (err?:any, topic?: string) => {
+      if (err || (topic == undefined)) {
+        console.error("Failed to determine output topic", err);
+        return;
       }
-    });
+
+      let message: any = {
+        "topic": topic,
+        "messages": [JSON.stringify(updateData)]
+      }
+
+      console.log("About to update device %s data on [%s]", deviceId, topic);
+      this.producer.send([message], (err: any, result: any) => {
+        if (err) {
+          console.error("Failed to update device data", err);
+        } else {
+          console.log("message away", result);
+        }
+      });
+    })
   }
 }
-
-export {KafkaHandler};

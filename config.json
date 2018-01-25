@@ -14,7 +14,9 @@
   },
   "broker": {
     "host": "zookeeper:2181",
-    "type": "kafka"
+    "type": "kafka",
+    "subject": "device-data",
+    "contextBroker": "http://data-broker"
   },
   "device_manager": {
     "kafkaHost" : "zookeeper:2181",
@@ -24,8 +26,6 @@
       "fetchMaxBytes" : 1048576,
       "groupId" : "iotagent"
     },
-    "kafkaTopics": [
-        { "topic": "dojot.device-manager.device" }
-      ]
+    "inputSubject": "dojot.device-manager.device"
   }
 }

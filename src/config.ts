@@ -56,17 +56,29 @@ interface BrokerOptions {
   // Broker type.
   // Default value is "orion".
   type?: "orion" | "kafka";
+
+  ////
+  // Options for kafka broker
+  ////
+  // subject to be used when publishing received data. Defaults to 'device-data'
+  subject?: string;
+  // address of the context broker that manages kafka. Defaults to 'data-broker'
+  contextBroker?: string;
 }
 
 // Device manager options
 interface DeviceManagerOptions {
-  // This is which kakfa node is used by device manager to 
+  // This is which kakfa node is used by device manager to
   // broadcast its devices updates.
   kafkaHost: string;
   kafkaOptions: KafkaOptions;
+
   // Topics used by device manager to send notifications
   // about devices
-  kafkaTopics: KafkaTopic[];
+  // kafkaTopics: KafkaTopic[];
+
+  // subject used to receive asynch notifications from deviceManager
+  inputSubject: string;
 }
 // Main configuration structure
 interface ConfigOptions {
