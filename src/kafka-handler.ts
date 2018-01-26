@@ -12,8 +12,8 @@ export class KafkaHandler implements DataBroker {
   // Broker IP address and port.
   host: string;
 
-  // Maps tenants to kafka topics
-  topicMap: {[id: string]: string};
+  // Maps tenants to services to kafka topics
+  topicMap: {[tenant: string]: {[service: string]:string}};
   private publishingSubject: string;
   private contextBroker: string;
 
@@ -93,9 +93,6 @@ export class KafkaHandler implements DataBroker {
         // First try
         // Creating consumer client - from device manager to iotagent.
         // This is always used.
-        // let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer-" +  Math.floor(Math.random() * 10000));
-        let client = new kafka.Client(config.device_manager.kafkaHost, "iotagent-json-consumer");
-        console.log("... Kafka client for consumer is ready.");
         console.log("Creating Kafka consumer...");
         this.getPublishTopic('admin', config.device_manager.inputSubject, (err?:any, topic?: string) => {
           if (err || (topic == undefined)) {
@@ -103,8 +100,8 @@ export class KafkaHandler implements DataBroker {
             process.exit(1);
           }
 
-          const kafkaTopic: kafka.Topic =  { 'topic': topic! };
-          this.consumer = new kafka.HighLevelConsumer(client, [kafkaTopic], config.device_manager.kafkaOptions);
+          this.consumer = new kafka.ConsumerGroup(config.device_manager.consumerOptions, topic!);
+
           // Kafka consumer events registration
           this.consumer.on("message", (data) => {
             let parsedData = JSON.parse(data.value.toString());
@@ -144,7 +141,10 @@ export class KafkaHandler implements DataBroker {
    */
   private getPublishTopic(tenant: string, subject: string, callback: (err?: any, topic?:string) => void): void {
     if (tenant in this.topicMap) {
-      callback(undefined, this.topicMap[tenant]);
+      if (subject in this.topicMap[tenant]){
+        callback(undefined, this.topicMap[tenant][subject]);
+        return;
+      }
     }
 
     function generateJWT() {
@@ -163,8 +163,11 @@ export class KafkaHandler implements DataBroker {
       'method': 'get',
       'headers': {'authorization': 'Bearer ' + generateJWT()}
     }).then((response: AxiosResponse) => {
-      this.topicMap[tenant] = response.data.topic;
-      callback(undefined, this.topicMap[tenant]);
+      if (! (this.topicMap[tenant])) {
+        this.topicMap[tenant] = {};
+      }
+      this.topicMap[tenant][subject] = response.data.topic;
+      callback(undefined, this.topicMap[tenant][subject]);
     }).catch((error: AxiosError) => {
       callback(error.message, undefined);
     })

@@ -41,9 +41,11 @@ interface KafkaTopic {
 
 // Kafka configuration
 interface KafkaOptions {
-  autoCommit: boolean;
-  fetchMaxWaitMs: number;
-  fetchMaxBytes: number;
+  // Kafka location
+  kafkaHost: string;
+  // Session timeout - shorter timeouts lead to quicker failure detection, at a higher broker
+  // overhead cost.
+  sessionTimeout: number;
   // Kafka group ID
   groupId: string;
 }
@@ -68,15 +70,8 @@ interface BrokerOptions {
 
 // Device manager options
 interface DeviceManagerOptions {
-  // This is which kakfa node is used by device manager to
-  // broadcast its devices updates.
-  kafkaHost: string;
-  kafkaOptions: KafkaOptions;
-
-  // Topics used by device manager to send notifications
-  // about devices
-  // kafkaTopics: KafkaTopic[];
-
+  // Configurations for kafka consumer
+  consumerOptions: KafkaOptions;
   // subject used to receive asynch notifications from deviceManager
   inputSubject: string;
 }

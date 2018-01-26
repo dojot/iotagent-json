@@ -19,12 +19,10 @@
     "contextBroker": "http://data-broker"
   },
   "device_manager": {
-    "kafkaHost" : "zookeeper:2181",
-    "kafkaOptions": {
-      "autoCommit": true,
-      "fetchMaxWaitMs" : 1000,
-      "fetchMaxBytes" : 1048576,
-      "groupId" : "iotagent"
+    "consumerOptions": {
+      "kafkaHost" : "kafka:9092",
+      "sessionTimeout": 15000,
+      "groupId": "iotagent"
     },
     "inputSubject": "dojot.device-manager.device"
   }
