@@ -75,6 +75,15 @@ interface DeviceManagerOptions {
   // subject used to receive asynch notifications from deviceManager
   inputSubject: string;
 }
+
+interface TenancyOptions {
+  // subject to use to receive tenancy lifecycle
+  subject: string;
+  // options to pass on to kafka client when creating connection
+  consumerOptions: KafkaOptions;
+  //
+  manager: string;
+}
 // Main configuration structure
 interface ConfigOptions {
   // MQTT options.
@@ -83,6 +92,8 @@ interface ConfigOptions {
   broker: BrokerOptions;
   // Device manager options
   device_manager: DeviceManagerOptions;
+  // Tenancy management options
+  tenancy: TenancyOptions;
 }
 
 export {ConfigOptions};

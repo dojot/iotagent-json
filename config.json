@@ -25,5 +25,14 @@
       "groupId": "iotagent"
     },
     "inputSubject": "dojot.device-manager.device"
+  },
+  "tenancy": {
+    "manager": "http://auth:5000",
+    "subject": "dojot.tenancy",
+    "consumerOptions": {
+      "kafkaHost" : "kafka:9092",
+      "sessionTimeout": 15000,
+      "groupId": "iotagent"
+    }
   }
 }
