@@ -62,14 +62,16 @@ export class KafkaHandler implements DataBroker {
         this.initDeviceConsumer(tenant);
       }
     }).catch((error: AxiosError) => {
-      console.error('Failed to retrieve list of existing tenants');
+      console.error('Failed to retrieve list of existing tenants.', error);
+      console.error('Trying again in a few moments');
+      setTimeout( () => { this.bootstrapTenants(); }, 10000);
     })
   }
 
   private initTenantWatcher() {
     this.getPublishTopic('internal', this.config.tenancy.subject, (err?:any, topic?: string) => {
       if (err || (topic == undefined)) {
-        console.error('Failed to retrieve tenancy management topic', err);
+        console.error('Failed to retrieve tenancy management topic. ', err);
         process.exit(1);
       }
 
