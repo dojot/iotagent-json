@@ -27,22 +27,30 @@ instance, the default configuration file looks like:
         }
       },
       "broker": {
-        "host": "orion:1026",
-        "type": "orion"
+        "host": "zookeeper:2181",
+        "type": "kafka",
+        "subject": "device-data",
+        "contextBroker": "http://data-broker"
       },
       "device_manager": {
-        "kafkaHost" : "zookeeper:2181",
-        "kafkaOptions": {
-          "autoCommit": true,
-          "fetchMaxWaitMs" : 1000,
-          "fetchMaxBytes" : 1048576,
-          "groupId" : "iotagent"
+        "consumerOptions": {
+          "kafkaHost" : "kafka:9092",
+          "sessionTimeout": 15000,
+          "groupId": "iotagent"
         },
-        "kafkaTopics": [
-            { "topic": "dojot.device-manager.device" }
-          ]
+        "inputSubject": "dojot.device-manager.device"
+      },
+      "tenancy": {
+        "manager": "http://auth:5000",
+        "subject": "dojot.tenancy",
+        "consumerOptions": {
+          "kafkaHost" : "kafka:9092",
+          "sessionTimeout": 15000,
+          "groupId": "iotagent"
+        }
       }
     }
+
 
 
 There are four things to configure:
@@ -59,6 +67,9 @@ There are four things to configure:
 
 - Device manager access: how the device manager will send device notifications
   to iotagent (creation, update and removal).
+
+- Tenancy: how iotagent-json will get tenant-related information, such as which
+  are the tenants currently configured in dojot.
 
 Check `dojot documentation`_ if you don't know or don't remember all the
 components and how and why they communicate to each other.
@@ -336,39 +347,26 @@ they should follow a simple key-value structure, such as:
     }
 
 
-But, if not desired or feasible, this can be a little more flexible. Its
-structure should allow the construction of a simple key-value list. For
-instance, let's suppose that your device emits the following message:
+If not possible, you could make use of ``translator`` attributes so that you
+get more flexibility on device message formats.
 
-.. code-block:: json
+Example
+-------
 
-    {
-      "data": {
-        "first_": {
-          "temperature": {
-            "type": "float",
-            "value": 10.5
-          },
-          "pressure": {
-            "type": "float",
-            "value": 750
-          }
-        }
-      }
-    }
+This example uses ``mosquitto_pub`` tool, available with ``mosquitto_clients``
+package. To send a message to iotagent-json via MQTT, just execute this
+command:
 
+.. code-block:: bash
 
-This allows the following structure to be constructed:
+    mosquitto_pub -h localhost -t /admin/efac/attrs -m '{"speed" : 10}'
 
-.. code-block:: json
+This command will send the message containing one value for attribute
+``speed``. The device ID is ``efac``. ``-t`` flag sets the topic to which this
+message will be published.
 
-    {
-      "temperature": 10.5,
-      "pressure": 750
-    }
-
-which is ok. This transformation is done by "translator" instructions
-associated to the device, which are explained in detail in other document.
+This command assumes that you are running iotagent-json in your machine (it also
+works if you use dojot's `docker-compose`_).
 
 
 .. _DeviceManager Concepts: http://dojotdocs.readthedocs.io/projects/DeviceManager/en/latest/concepts.html
@@ -376,3 +374,4 @@ associated to the device, which are explained in detail in other document.
 .. _dojot documentation: http://dojotdocs.readthedocs.io/en/latest/
 .. _JSON patch: http://jsonpatch.com/
 .. _ID-location structure table: #id2
+.. _docker-compose: https://github.com/dojot/docker-compose
