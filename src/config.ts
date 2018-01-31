@@ -41,9 +41,11 @@ interface KafkaTopic {
 
 // Kafka configuration
 interface KafkaOptions {
-  autoCommit: boolean;
-  fetchMaxWaitMs: number;
-  fetchMaxBytes: number;
+  // Kafka location
+  kafkaHost: string;
+  // Session timeout - shorter timeouts lead to quicker failure detection, at a higher broker
+  // overhead cost.
+  sessionTimeout: number;
   // Kafka group ID
   groupId: string;
 }
@@ -56,17 +58,31 @@ interface BrokerOptions {
   // Broker type.
   // Default value is "orion".
   type?: "orion" | "kafka";
+
+  ////
+  // Options for kafka broker
+  ////
+  // subject to be used when publishing received data. Defaults to 'device-data'
+  subject?: string;
+  // address of the context broker that manages kafka. Defaults to 'data-broker'
+  contextBroker?: string;
 }
 
 // Device manager options
 interface DeviceManagerOptions {
-  // This is which kakfa node is used by device manager to 
-  // broadcast its devices updates.
-  kafkaHost: string;
-  kafkaOptions: KafkaOptions;
-  // Topics used by device manager to send notifications
-  // about devices
-  kafkaTopics: KafkaTopic[];
+  // Configurations for kafka consumer
+  consumerOptions: KafkaOptions;
+  // subject used to receive asynch notifications from deviceManager
+  inputSubject: string;
+}
+
+interface TenancyOptions {
+  // subject to use to receive tenancy lifecycle
+  subject: string;
+  // options to pass on to kafka client when creating connection
+  consumerOptions: KafkaOptions;
+  //
+  manager: string;
 }
 // Main configuration structure
 interface ConfigOptions {
@@ -76,6 +92,8 @@ interface ConfigOptions {
   broker: BrokerOptions;
   // Device manager options
   device_manager: DeviceManagerOptions;
+  // Tenancy management options
+  tenancy: TenancyOptions;
 }
 
 export {ConfigOptions};
