@@ -16,7 +16,7 @@ interface DeviceManagerEventData {
  */
 interface DeviceManagerEvent {
   // Event type. Self-explanatory.
-  event: "create" | "remove" | "update" | "configure";
+  event: "create" | "remove" | "update" | "actuate";
   // The event data. This should be the device data model.
   data: DeviceManagerEventData;
   // Any extra meta-information.

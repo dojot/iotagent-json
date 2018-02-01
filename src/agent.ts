@@ -155,10 +155,33 @@ class Agent {
         this.cacheHandler.processEvent(event);
         this.idResolver.processEvent(event);
         break;
-      case "configure":
+      case "actuate":
         // TODO The message could be verified if it is
         // valid.
-        publish(this.mqttContext, event.meta["topic"], event.data);
+        console.log("Processing configure message");
+        let device = this.cacheHandler.lookup(event.data.id);
+        if (device == null) { 
+          console.log("No such device was found in cache. Bailing out.");
+          return; 
+        };
+
+        console.log("Found device: " + util.inspect(device, {depth: null}))
+
+        let topic = "";
+        for (let attr in device.data["attrs"]) {
+          for (let templ_attrs of device.data["attrs"][attr]) {
+            if ((templ_attrs["label"] == "topic-config") && (templ_attrs["type"] == "configuration")) {
+              topic = templ_attrs["static_value"];
+            }
+          }
+        }
+        
+        if (topic == "") { 
+          console.log("Falling back to /SERVICE/ID/config scheme");
+          topic = "/" + event.meta["service"] + "/" + event.data.id + "/config"
+        }
+        console.log("Publishing to topic " + topic);
+        publish(this.mqttContext, topic, event.data);
         break;
       default:
     }
