@@ -14,7 +14,7 @@ script:
  - docker build -t dojot/iotagent-json:latest . -f ./docker/Dockerfile
 
 after_success:
-  - if [ "${TRAVIS_BRANCH}" == "master" ]; then
+  - if [ "${TRAVIS_BRANCH}" == "cpqd_master" ]; then
     docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
     docker push dojot/iotagent-json:latest;
     fi
