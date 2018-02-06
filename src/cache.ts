@@ -133,6 +133,13 @@ class IdResolver {
       for (let templateAttr of event.data.attrs[templateId]) {
         if (templateAttr["label"] === "id-location") {
           ret.push(JSON.parse(templateAttr["static_value"]));
+        } else if (templateAttr["label"] === "topic") {
+          let instruction : ResolverInstructions = {
+            type : "mqtt-topic",
+            xid: templateAttr["static_value"],
+            id : templateAttr["static_value"]
+          }
+          ret.push(instruction);
         }
       }
     }
