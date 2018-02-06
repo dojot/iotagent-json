@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 version="latest"
-if [ $TRAVIS_BRANCH != "master" ] ; then
+if [ $TRAVIS_BRANCH != "cpqd_master" ] ; then
   version=$TRAVIS_BRANCH
 fi
 tag=$TRAVIS_REPO_SLUG:$version
