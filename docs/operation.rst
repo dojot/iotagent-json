@@ -151,7 +151,7 @@ attribute property.
 
 
 The translator described in the table would move the value from
-``/data/Modbus_Handler/0/bv`` to ``/temperature``, transforming the message
+``/data/Coils/e/1/bv`` to ``/temperature``, transforming the message
 published by the device:
 
 .. code-block:: json
@@ -316,10 +316,11 @@ These configurations indicate that:
     
       {
         "data" : {
-          "Modbus_Handler" : {
-            "0" : {
-              "bv" : 1234
-            }
+          "Coils" : {
+            "e": [
+              { "bv" : 0.5 },
+              { "bv" : 27.5 }
+            ]
           }
         }
       }
@@ -329,7 +330,7 @@ These configurations indicate that:
   .. code-block:: json
     
       {
-        "temperature" : 1234
+        "temperature" : 27.5
       }
 
 
