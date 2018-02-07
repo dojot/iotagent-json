@@ -21,3 +21,10 @@ export interface JSONPatch {
   new (patch: string | Array<any>, mutate?: boolean): JSONPatch;
   apply<D>(doc: D): D;
 }
+
+export interface JSONPatchInstruction {
+  "op": "add" | "remove" | "replace" | "copy" | "move" | "test";
+  "from"?: string;
+  "path": string;
+  "value"?: any
+}

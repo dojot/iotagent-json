@@ -245,9 +245,9 @@ export class KafkaHandler implements DataBroker {
     }
 
     if (metaAttributes.TimeInstant != undefined) {
-      for (let attr of attributes) {
+      for (let attr in attributes) {
         // Only timestamp will be updated for now
-        attr["meta"] = {
+        attributes[attr]["meta"] = {
           TimeInstant: metaAttributes.TimeInstant
         }
       }

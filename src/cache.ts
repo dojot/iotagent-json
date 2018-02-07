@@ -1,5 +1,27 @@
 import util = require("util");
+import { Constants } from "./constants";
 
+/**
+ * Device attributes
+ */
+interface DeviceAttribute {
+  // Attribute ID
+  id: number;
+  // Attribute label
+  label: string;
+  // Attribute type 
+  type: string;
+  // Attribute value type (string, integer, etc.)
+  value_type: string;
+  // Attribute static value, if any
+  static_value: string;
+  // Base template for this attribute
+  template_id: string;
+}
+
+interface DeviceAttributeMap {
+  [templateId: number] : [ DeviceAttribute ]
+}
 
 /**
  * Event data.
@@ -7,8 +29,17 @@ import util = require("util");
 interface DeviceManagerEventData {
   // Device ID.
   id: string;
-  [attrs: string] : any;
+  // Device label
+  label: string;
+  // Base templates
+  templates: [ number ];
+  // Device attribute map
+  attrs: DeviceAttributeMap;
+  // Device creation date
+  created: string;
 }
+
+
 
 /**
  * Event sent by device manager
@@ -72,12 +103,12 @@ class CacheHandler {
     console.log("Received event: " + util.inspect(event, { depth: null}));
 
     switch (event.event) {
-      case "create":
-      case "update":
+      case Constants.Kakfa.CREATE_EVENT:
+      case Constants.Kakfa.UPDATE_EVENT:
       console.log("Inserting into cache new device description.");
         this.cache[event.data.id] = event;
       break;
-      case "remove":
+      case Constants.Kakfa.REMOVE_EVENT:
       console.log("Removing from cache device description.");
         delete this.cache[event.data.id]
       break;
@@ -89,7 +120,7 @@ class CacheHandler {
    * @param id Device ID
    * @returns The cached device data
    */
-  lookup(id: string) : any {
+  lookup(id: string) : DeviceManagerEvent | null {
     if (id in this.cache) {
       return this.cache[id];
     } else {
@@ -131,13 +162,15 @@ class IdResolver {
 
     for (let templateId in event.data.attrs) {
       for (let templateAttr of event.data.attrs[templateId]) {
-        if (templateAttr["label"] === "id-location") {
-          ret.push(JSON.parse(templateAttr["static_value"]));
-        } else if (templateAttr["label"] === "topic") {
+        if ((templateAttr.label === Constants.ID_LOCATION_LABEL) && 
+            (templateAttr.type === Constants.CONFIGURATION_TYPE)) {
+          ret.push(JSON.parse(templateAttr.static_value));
+        } else if ((templateAttr.label === Constants.MQTT_TOPIC_LABEL) &&
+          (templateAttr.type === Constants.CONFIGURATION_TYPE)) {
           let instruction : ResolverInstructions = {
             type : "mqtt-topic",
-            xid: templateAttr["static_value"],
-            id : templateAttr["static_value"]
+            xid: templateAttr.static_value,
+            id : templateAttr.static_value
           }
           ret.push(instruction);
         }
@@ -170,8 +203,8 @@ class IdResolver {
     }
 
     switch (event.event) {
-      case "create":
-      case "update":
+      case Constants.Kakfa.CREATE_EVENT:
+      case Constants.Kakfa.UPDATE_EVENT:
         console.log("Inserting into resolver new ID resolution instruction.");
         for (let instruction of idLocations) {
           console.log("Instruction: " + util.inspect(instruction, {depth: null}));
@@ -179,7 +212,7 @@ class IdResolver {
           this.idCache[instruction.id] = event.data.id;
         }
       break;
-      case "remove":
+      case Constants.Kakfa.UPDATE_EVENT:
         console.log("Removing from resolver an ID resolution instruction.");
         for (let instruction of idLocations) {
           delete this.cache[instruction.xid];
