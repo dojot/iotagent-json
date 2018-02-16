@@ -109,8 +109,9 @@ Device configuration for iotagent-json
 --------------------------------------
 
 The following device attributes are considered by iotagent-json. All these
-attributes are of ``configuration`` type and their values are in
-``static_value`` attribute property.
+attributes are of ``meta`` type (with the exception of translator instructions,
+with type is ``meta-translator`` and their values are in ``static_value``
+attribute property.
 
 .. list-table:: Device attributes for iotagent-json
     :header-rows: 1
@@ -134,7 +135,7 @@ attributes are of ``configuration`` type and their values are in
 
             {
               "op": "move",
-              "from": "/data/Modbus_Handler/0/bv",
+              "from": "/data/Coils/e/1/bv",
               "path": "/temperature",
               "optional": true
             }
@@ -144,21 +145,24 @@ attributes are of ``configuration`` type and their values are in
         
         This follows the `JSON patch`_ definitions with one important
         difference: if the patch can't be applied (because the message has no
-        such attribute), the procedure won't fail.
+        such attribute), the procedure won't fail - that's the purpose of the
+        ``optional`` attribute. Also, check the definition of a `JSON pointer`_
+        to understand how to reference items inside a list.
 
 
 The translator described in the table would move the value from
-``/data/Modbus_Handler/0/bv`` to ``/temperature``, transforming the message
+``/data/Coils/e/1/bv`` to ``/temperature``, transforming the message
 published by the device:
 
 .. code-block:: json
   
     {
       "data" : {
-        "Modbus_Handler" : {
-          "0" : {
-            "bv" : 27.5
-          }
+        "Coils" : {
+          "e": [
+            { "bv" : 0.5 },
+            { "bv" : 27.5 }
+          ]
         }
       }
     }
@@ -179,6 +183,8 @@ is done by the ``id-location`` device attribute, which is described by the
 table below. If none is specified, then iotagent-json will assume a default
 behavior, which considers the ID as the second token of MQTT topic, such as:
 ``/admin/efac/attrs`` with physical device ID being ``efac``.
+
+.. _ID-location structure table:
 
 .. list-table:: ID-location structure
     :header-rows: 1
@@ -235,25 +241,25 @@ by iotagent-json.
       "attrs": [
         {
           "label": "translator",
-          "type": "configuration",
+          "type": "meta-translator",
           "value_type": "string",
           "static_value": "{ \"op\": \"move\", \"from\": \"/data/Coils/e/1/bv\", \"path\": \"/temperature\", \"optional\": true }"
         },
         {
           "label": "id-location",
-          "type": "configuration",
+          "type": "meta",
           "value_type": "string",
           "static_value": "{\"xid\":\"/agent/main/000BABC80F4A/devinfo\",\"id\":\"000BABC80F4A\",\"type\":\"mqtt-topic\",\"regexp\":\"\\/.*?\\/.*?\\/(.*?)\\/.*\"}"
         },
         {
           "label": "topic",
-          "type": "configuration",
+          "type": "meta",
           "value_type": "string",
           "static_value": "/agent/main/000BABC80F4A/devinfo"
         },
         {
           "label": "topic-config",
-          "type": "configuration",
+          "type": "meta",
           "value_type": "string",
           "static_value": "/agent/main/000BABC80F4A/config"
         },
@@ -310,10 +316,11 @@ These configurations indicate that:
     
       {
         "data" : {
-          "Modbus_Handler" : {
-            "0" : {
-              "bv" : 1234
-            }
+          "Coils" : {
+            "e": [
+              { "bv" : 0.5 },
+              { "bv" : 27.5 }
+            ]
           }
         }
       }
@@ -323,7 +330,7 @@ These configurations indicate that:
   .. code-block:: json
     
       {
-        "temperature" : 1234
+        "temperature" : 27.5
       }
 
 
@@ -373,5 +380,5 @@ works if you use dojot's `docker-compose`_).
 .. _DeviceManager Messages: http://dojotdocs.readthedocs.io/projects/DeviceManager/en/latest/kafka-messages.html
 .. _dojot documentation: http://dojotdocs.readthedocs.io/en/latest/
 .. _JSON patch: http://jsonpatch.com/
-.. _ID-location structure table: #id2
+.. _JSON pointer: http://jsonpatch.com/#json-pointer
 .. _docker-compose: https://github.com/dojot/docker-compose

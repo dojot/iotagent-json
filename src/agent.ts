@@ -3,6 +3,7 @@ import util = require("util");
 import mqtt = require("mqtt");
 import mqttHandler = require("./mqtt-handler");
 import jsonpatch = require("../src/jsonpatch")
+import { JSONPatchInstruction } from "./jsonpatch"
 import { ConfigOptions } from "./config";
 import { tokenize } from "./tools";
 import { DataBroker, MetaAttribute } from "./data-broker";
@@ -11,6 +12,7 @@ import { resolve } from "url";
 import { publish } from "./mqtt-handler";
 import { OrionHandler } from "./orion-handler";
 import { KafkaHandler } from "./kafka-handler";
+import { Constants } from "./constants";
 
 /**
  * IoT agent class
@@ -72,6 +74,51 @@ class Agent {
   }
 
   /**
+   * Retrieve a list of translation instructions to be applied to a message.
+   * 
+   * TODO This might be better moved to some other entity.
+   * 
+   * @param deviceData The device to be analyzed
+   * @returns A list of translators, if any.
+   */
+  static getTranslators(deviceData: DeviceManagerEvent) : JSONPatchInstruction []{
+    let translators: JSONPatchInstruction[] = [];
+    for (let template in deviceData.data.attrs) {
+      for (let cfgAttr of deviceData.data.attrs[template]) {
+        // Check for translators.
+        // Attribute name could be anything.
+        if ((cfgAttr.type === Constants.TRANSLATOR_TYPE) &&
+          (cfgAttr.static_value != undefined)) {
+          translators.push(JSON.parse(cfgAttr.static_value));
+        }
+      }
+    }
+    return translators;
+  }
+
+  /**
+   * Filter out all non-registered device attributes
+   * @param messageObj The received message to be filtered
+   * @param mgmEvent The associated device data structure
+   */
+  static filterRegisteredAttributes(messageObj: any, mgmEvent: DeviceManagerEvent) : any {
+    // Filtering out all non-registered device attributes
+    let filteredObj: any = {};
+    for (let attr in messageObj) {
+      for (let template in mgmEvent.data.attrs) {
+        for (let cfgAttr of mgmEvent.data.attrs[template]) {
+          if (cfgAttr.label === attr) {
+            filteredObj[attr] = messageObj[attr];
+            // Found it. Next attribute
+            break;
+          }
+        }
+      }
+    }
+    return filteredObj;
+  }
+
+  /**
    * Process a message received via MQTT
    * @param {string} topic The topic through which the message was published
    * @param {string} message The received message
@@ -81,7 +128,9 @@ class Agent {
     console.log('Topic: ' + topic);
     console.log('Content:' + message);
 
+    // Received message object - this could be anything.
     let messageObj: any;
+
     try {
       messageObj = JSON.parse(message);
     } catch (e) {
@@ -100,62 +149,45 @@ class Agent {
     }
     console.log("Detected device ID: " + id);
 
-    let deviceData = this.cacheHandler.lookup(id);
-    let translator = [];
-    // Find translators:
-    for (let template in deviceData.data.attrs) {
-      for (let cfgAttr of deviceData.data.attrs[template]) {
-        // Check for translators
-        // TODO This could be a meta-attribute
-        if (cfgAttr.label === "translator" && cfgAttr.static_value != undefined) {
-          translator.push(JSON.parse(cfgAttr.static_value));
-        }
-      }
+    let mgmEvent = this.cacheHandler.lookup(id);
+    if (mgmEvent == null) {
+      console.log("No device data was found in cache. Bailing out.")
+      return
     }
 
-    if (translator != undefined) {
-      console.log("There is a translator for this device.");
-      console.log("Translating message...");
-      messageObj = jsonpatch.apply_patch(messageObj, translator);
-      console.log("... message translated.");
-    }
-
+    messageObj = jsonpatch.apply_patch(messageObj, Agent.getTranslators(mgmEvent));
+    
+    // Adding timestamp to the message if not present
     let metaData: MetaAttribute = {};
     if (messageObj["TimeInstant"] != undefined) {
       metaData.TimeInstant = messageObj["TimeInstant"];
     }
 
-    let filteredObj: any = {};
-    // Message matches default message structure
-    for (let attr in messageObj) {
-      for (let template in deviceData.data.attrs) {
-        for (let cfgAttr of deviceData.data.attrs[template]) {
-          if (cfgAttr.label === attr) {
-            filteredObj[attr] = messageObj[attr];
-            // Found it. Next attribute
-            break;
-          }
-        }
-      }
-    }
+    // Filtering out all non-registered device attributes
+    let filteredObj = Agent.filterRegisteredAttributes(messageObj, mgmEvent);
 
     console.log("Sending device update: ");
     console.log("Device ID: " + id);
-    console.log("Service: " + deviceData.meta.service);
+    console.log("Service: " + mgmEvent.meta.service);
     console.log("Data: ");
     console.log(util.inspect(filteredObj, { depth: null }));
-    this.dataBroker.updateData(deviceData.meta.service, id, filteredObj, metaData);
+    this.dataBroker.updateData(mgmEvent.meta.service, id, filteredObj, metaData);
   }
 
-  processKafkaMessage(event: DeviceManagerEvent) {
+
+  /**
+   * Process a Kafka message
+   * @param event The received event message
+   */
+  processKafkaMessage(event: DeviceManagerEvent) : void {
     switch (event.event) {
-      case "create":
-      case "remove":
-      case "update":
+      case Constants.Kakfa.CREATE_EVENT:
+      case Constants.Kakfa.REMOVE_EVENT:
+      case Constants.Kakfa.UPDATE_EVENT:
         this.cacheHandler.processEvent(event);
         this.idResolver.processEvent(event);
         break;
-      case "actuate":
+      case Constants.Kakfa.ACTUATE_EVENT:
         // TODO The message could be verified if it is
         // valid.
         console.log("Processing configure message");
@@ -168,14 +200,20 @@ class Agent {
         console.log("Found device: " + util.inspect(device, {depth: null}))
 
         let topic = "";
-        for (let attr in device.data["attrs"]) {
-          for (let templ_attrs of device.data["attrs"][attr]) {
-            if ((templ_attrs["label"] == "topic-config") && (templ_attrs["type"] == "configuration")) {
-              topic = templ_attrs["static_value"];
+        for (let template_id in device.data.attrs) {
+          for (let templ_attrs of device.data.attrs[template_id]) {
+            if ((templ_attrs.label == Constants.MQTT_ACTUATE_TOPIC_LABEL) && 
+                (templ_attrs.type == Constants.CONFIGURATION_TYPE)) {
+              topic = templ_attrs.static_value;
             }
           }
         }
-        
+
+        //
+        // TODO There should also be a check whether the attribute is 'actuator'
+        // type
+        //
+
         if (topic == "") { 
           console.log("Falling back to /SERVICE/ID/config scheme");
           topic = "/" + event.meta["service"] + "/" + event.data.id + "/config"
