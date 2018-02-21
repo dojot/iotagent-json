@@ -9,7 +9,7 @@ interface DeviceAttribute {
   id: number;
   // Attribute label
   label: string;
-  // Attribute type 
+  // Attribute type
   type: string;
   // Attribute value type (string, integer, etc.)
   value_type: string;
@@ -162,7 +162,7 @@ class IdResolver {
 
     for (let templateId in event.data.attrs) {
       for (let templateAttr of event.data.attrs[templateId]) {
-        if ((templateAttr.label === Constants.ID_LOCATION_LABEL) && 
+        if ((templateAttr.label === Constants.ID_LOCATION_LABEL) &&
             (templateAttr.type === Constants.CONFIGURATION_TYPE)) {
           ret.push(JSON.parse(templateAttr.static_value));
         } else if ((templateAttr.label === Constants.MQTT_TOPIC_LABEL) &&
@@ -212,7 +212,7 @@ class IdResolver {
           this.idCache[instruction.id] = event.data.id;
         }
       break;
-      case Constants.Kakfa.UPDATE_EVENT:
+      case Constants.Kakfa.REMOVE_EVENT:
         console.log("Removing from resolver an ID resolution instruction.");
         for (let instruction of idLocations) {
           delete this.cache[instruction.xid];
