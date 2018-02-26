@@ -84,6 +84,12 @@ interface TenancyOptions {
   //
   manager: string;
 }
+
+interface RabbitOptions {
+  // RabbitMQ address
+  host: string;
+}
+
 // Main configuration structure
 interface ConfigOptions {
   // MQTT options.
@@ -94,6 +100,8 @@ interface ConfigOptions {
   device_manager: DeviceManagerOptions;
   // Tenancy management options
   tenancy: TenancyOptions;
+  // RabbitMQ Options
+  rabbitmq : RabbitOptions;
 }
 
 export {ConfigOptions};
