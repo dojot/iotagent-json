@@ -30,6 +30,7 @@
     "mqtt": "^1.14.1",
     "request": "^2.72.0",
     "tsconfig": "^7.0.0",
-    "typescript": "^2.5.3"
+    "typescript": "^2.5.3",
+    "dojot-clientlib": "dojot/alarm-client-node#master"
   }
 }

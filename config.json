@@ -34,5 +34,8 @@
       "sessionTimeout": 15000,
       "groupId": "iotagent"
     }
+  },
+  "rabbitmq": {
+    "host": "rabbitmq"
   }
 }

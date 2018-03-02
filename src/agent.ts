@@ -1,6 +1,7 @@
 import fs = require("fs");
 import util = require("util");
 import mqtt = require("mqtt");
+import client = require("dojot-clientlib");
 import mqttHandler = require("./mqtt-handler");
 import jsonpatch = require("../src/jsonpatch")
 import { JSONPatchInstruction } from "./jsonpatch"
@@ -38,7 +39,11 @@ class Agent {
   cacheHandler: CacheHandler;
 
   // Tool to find out the device ID from a received message.
-  idResolver: IdResolver
+  idResolver: IdResolver;
+
+  // Our client to connect and send alarms to the server
+  rabbitClient : client.AlarmConn;
+
 
   constructor(config: ConfigOptions) {
     if ((config.broker.type !== 'kafka') && (config.broker.type !== 'orion')) {
@@ -71,13 +76,15 @@ class Agent {
       default:
         throw new Error('Invalid broker configuration detected: ' + this.configuration.broker.type);
     }
+
+    this.rabbitClient = new client.AlarmConn(this.configuration.rabbitmq.host);
   }
 
   /**
    * Retrieve a list of translation instructions to be applied to a message.
-   * 
+   *
    * TODO This might be better moved to some other entity.
-   * 
+   *
    * @param deviceData The device to be analyzed
    * @returns A list of translators, if any.
    */
@@ -134,6 +141,21 @@ class Agent {
     try {
       messageObj = JSON.parse(message);
     } catch (e) {
+      let ALARM = {
+              "namespace": "dojot.agent",
+              "domain": "JsonParseError",
+              "severity": "Minor",
+              "primarySubject": {
+                  "instance_id": "1",
+                  "module_name": "IOT Agent"
+              },
+              "additionalData": {
+                  "topic": topic,
+                  "content": message.toString()
+              },
+              "eventTimestamp": new Date().toISOString()
+          };
+      this.rabbitClient.send(ALARM);
       console.log('Failed to parse incoming data\n', e);
       return
     }
@@ -156,7 +178,7 @@ class Agent {
     }
 
     messageObj = jsonpatch.apply_patch(messageObj, Agent.getTranslators(mgmEvent));
-    
+
     // Adding timestamp to the message if not present
     let metaData: MetaAttribute = {};
     if (messageObj["TimeInstant"] != undefined) {
@@ -192,9 +214,9 @@ class Agent {
         // valid.
         console.log("Processing configure message");
         let device = this.cacheHandler.lookup(event.data.id);
-        if (device == null) { 
+        if (device == null) {
           console.log("No such device was found in cache. Bailing out.");
-          return; 
+          return;
         };
 
         console.log("Found device: " + util.inspect(device, {depth: null}))
@@ -202,7 +224,7 @@ class Agent {
         let topic = "";
         for (let template_id in device.data.attrs) {
           for (let templ_attrs of device.data.attrs[template_id]) {
-            if ((templ_attrs.label == Constants.MQTT_ACTUATE_TOPIC_LABEL) && 
+            if ((templ_attrs.label == Constants.MQTT_ACTUATE_TOPIC_LABEL) &&
                 (templ_attrs.type == Constants.CONFIGURATION_TYPE)) {
               topic = templ_attrs.static_value;
             }
@@ -214,7 +236,7 @@ class Agent {
         // type
         //
 
-        if (topic == "") { 
+        if (topic == "") {
           console.log("Falling back to /SERVICE/ID/config scheme");
           topic = "/" + event.meta["service"] + "/" + event.data.id + "/config"
         }
@@ -228,4 +250,3 @@ class Agent {
 
 
 export { Agent };
-
