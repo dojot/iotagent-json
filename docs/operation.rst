@@ -58,8 +58,8 @@ There are four things to configure:
 - MQTT: where the device messages will come from.
 
 - MQTT Security: if used (and you should be using), these are the things that
-  must be configured. They are related to the communication between iotagent-json
-  and the physical device.
+  must be configured. They are related to the communication between
+  iotagent-json and the physical device.
 
 - Data broker: where to send device information updates. There is support for
   Kafka (sending a message to every component that is interested in device
@@ -102,7 +102,7 @@ ID being removed. The actuation operation will contain all attributes previously
 created with their respective values.
 
 The documentation related to this message can be found in `DeviceManager
-Messages`_. 
+Messages`_.
 
 
 Device configuration for iotagent-json
@@ -129,7 +129,7 @@ attribute property.
       - Where can the physical device identifier be located.
       - Check `ID-location structure table`_.
     * - translator
-      - Instructions to transform the message sent by the device to a simple 
+      - Instructions to transform the message sent by the device to a simple
         key-value JSON structure.
       - .. code-block:: json
 
@@ -139,10 +139,10 @@ attribute property.
               "path": "/temperature",
               "optional": true
             }
-        
+
         Keep in mind that this JSON should be "stringified", i.e., all special
-        caracters should be escaped. 
-        
+        caracters should be escaped.
+
         This follows the `JSON patch`_ definitions with one important
         difference: if the patch can't be applied (because the message has no
         such attribute), the procedure won't fail - that's the purpose of the
@@ -155,7 +155,7 @@ The translator described in the table would move the value from
 published by the device:
 
 .. code-block:: json
-  
+
     {
       "data" : {
         "Coils" : {
@@ -170,7 +170,7 @@ published by the device:
 into:
 
 .. code-block:: json
-  
+
     {
       "temperature" : 27.5
     }
@@ -208,7 +208,7 @@ behavior, which considers the ID as the second token of MQTT topic, such as:
       - Which attribute has the physical device ID, if ``id-location`` is
         ``mqtt-message``.
 
-      - ``device-id``, for a message like ``{"attr1" : 10, "device-id" 
+      - ``device-id``, for a message like ``{"attr1" : 10, "device-id"
         : "efac"}``
     * - regexp
       - Regular expression applyied to MQTT topic or selected attribute in
@@ -222,7 +222,7 @@ behavior, which considers the ID as the second token of MQTT topic, such as:
       - Any message attribute that maps directly to these device ID resolution
         instructions.
       - ``/c/devices/mqtt/`` (the topic used by all devices)
-    
+
 The ``xid`` attribute should be understood as "I have these instructions for
 locating the device ID, but I don't know which one to use for this message -
 thus I'll test the ``xid`` attribute from each one of them against it".
@@ -279,7 +279,7 @@ by iotagent-json.
 For the sake of readability, below are both values for translator and
 id-location, with no escape characters.
 
-translator: 
+translator:
   .. code-block:: json
 
       {
@@ -291,7 +291,7 @@ translator:
 
 id-location:
   .. code-block:: json
-  
+
       {
         "xid": "/agent/main/000BABC80F4A/devinfo",
         "id": "000BABC80F4A",
@@ -313,7 +313,7 @@ These configurations indicate that:
 -  The message should be transformed from:
 
   .. code-block:: json
-    
+
       {
         "data" : {
           "Coils" : {
@@ -328,7 +328,7 @@ These configurations indicate that:
   into:
 
   .. code-block:: json
-    
+
       {
         "temperature" : 27.5
       }
@@ -338,6 +338,31 @@ These configurations indicate that:
   ``/agent/main/000BABC80F4A/devinfo`` is received.
 
 
+
+Sending messages to other components via Kafka
+===============================================
+
+When iotagent-json receives a new message from a particular device, it must
+publish the new data to other components. The default subject used to publish
+this information is "device-data". Check `data-broker`_ documentation to check
+how these subjects are translated into Kafka topics.
+
+The message sent by iotagent-json is like this one:
+
+.. code-block:: json
+
+    {
+      "metadata": {
+        "deviceid": "efac",
+        "protocol": "mqtt",
+        "payload": "json"
+      },
+      "attrs": {
+      }
+    }
+
+As previously stated, the "attrs" attribute is the same as the one from
+`DeviceManager Messages`_.
 
 Receiving messages from devices via MQTT
 ========================================
@@ -372,8 +397,8 @@ This command will send the message containing one value for attribute
 ``speed``. The device ID is ``efac``. ``-t`` flag sets the topic to which this
 message will be published.
 
-This command assumes that you are running iotagent-json in your machine (it also
-works if you use dojot's `docker-compose`_).
+This command assumes that you are running iotagent-json in your machine (it
+also works if you use dojot's `docker-compose`_).
 
 
 .. _DeviceManager Concepts: http://dojotdocs.readthedocs.io/projects/DeviceManager/en/latest/concepts.html
@@ -382,3 +407,4 @@ works if you use dojot's `docker-compose`_).
 .. _JSON patch: http://jsonpatch.com/
 .. _JSON pointer: http://jsonpatch.com/#json-pointer
 .. _docker-compose: https://github.com/dojot/docker-compose
+.. _data-broker: https://github.com/dojot/data-broker
